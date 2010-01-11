@@ -16,8 +16,6 @@
 @end
 @*/
 
-// Speed up references to window, and allows munging its name.
-// also for undefined
 (function($, window, undefined) {
 
     var 
@@ -44,18 +42,51 @@
         /// dbj.create([]) returns new array  inhertied from array  argument
         /// all "illegal" calls returns object that has empty object as a parent
         ///</summary>
-        function F() { }; F.prototype = o || {} ;
+        function F() { }; F.prototype = o || {};
         return new F();
     };
 
+    //-------------------------------------------------------------------------------------
     dbj.json = {
-        parse: function(data) {
+        anyparse: function(data) {
             // vs JSON parse this will always work, even in the case of "non standard" JSON strings
             //  dbj.json.parse ("{ 'a':1 }")
             // will work even that a proper string should be : '{"a":1}'
-            return (new Function("return " + ("string" === typeof data ? data : "undefined")))();
+            return (new Function("return " + ("string" === typeof data ? data : "{}")))();
         }
     }
+
+    dbj.json.ok_string = function(data) {
+        return /^[\],:{}\s]*$/.test(
+            data.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, "@")
+            .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, "]")
+            .replace(/(?:^|:|,)(?:\s*\[)+/g, "")
+        );
+    }
+
+    dbj.json.nonstandard = function() {
+        try { JSON.parse("{ a : 1 }"); return true; } catch (x) { return false; }
+    } ();
+
+    // non-standard JSON stops here
+    dbj.json.parse =
+ (window.JSON && ("function" === typeof window.JSON.parse)) ?
+       dbj.json.nonstandard ?
+         function json_parse(data) {
+    if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
+             return window.JSON.parse(data);
+         }
+      : // else 
+         function json_parse(data) {
+             return window.JSON.parse(data);
+         }
+: // else 
+function json_parse(data) {
+         if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
+    return (new Function("return " + data))();
+}
+;
+    //-------------------------------------------------------------------------------------
 
     dbj.decode = function(H) {
         /// <summary>
