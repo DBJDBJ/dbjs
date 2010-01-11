@@ -1,0 +1,124 @@
+﻿<!DOCTYPE HTML >
+<html>
+<head>
+<title>DBJ*JSLib(tm) QUNIT Tests</title>
+<link href="../lib/qunit/qunit.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.js"></script>
+<script src="../lib/qunit/qunit.js" type="text/javascript"></script>
+<script src="../lib/dbj/dbj.lib.js" type="text/javascript"></script>
+<script type="text/javascript" id="local_examples">
+    function example1( color ) {
+        function faraway(jq_) { return jq_.find(".a"); }
+        var $div = $("<div style='color:" + color + "!important' ><div><div><div class='a b c'>ABC</div></div></div></div>");
+        // now pass  and search inside this "un-attached" element 
+        var $a = faraway($div);
+        return $a.css("color")
+    }
+
+    function example2(color) {
+        function faraway(jq_) { return jq_.find(".a"); }
+        var $div = $("<div style='color:" + color + "!important' ><div><div><div class='a b c'>ABC</div></div></div></div>");
+        // do this for browsers (like CHROME) who do not allow CSS2 properties on non-attached element
+        $div.appendTo($("head"));
+        // now pass  and search inside this "un-attached" element 
+        var $a = faraway($div);
+        var retval = $a.css("color")
+        $div.remove();
+        return retval;
+    }
+    // One in-page querying micro-engine
+    // inspired partially by
+    // http://weblogs.asp.net/bleroy/archive/2009/08/31/queryselectorall-on-old-ie-versions-something-that-doesn-t-work.aspx
+    // Indeed not tested on browsers which have no querySelectorAll() implemented
+    // or no document.all implemented
+    (function(global) {
+        function all_(container_) {
+            if (document.all)
+                return (container_ || document).all;
+            else
+                return undefined;
+        }
+        // NOTE: IE can handle up to 31 style elements in one page
+        var _style_ = null;
+        var style_ = document.createStyleSheet ? function(title_) {
+            if (_style_ == null) {
+                _style_ = document.createStyleSheet();
+                _style_.title = title_ || "";
+            }
+            return _style_;
+        } : function(title_) {
+            if (_style_ == null) {
+                _style_ = document.createElement('STYLE');
+                _style_.title = title_ || "";
+                document.documentElement.firstChild.appendChild(_style_);
+            }
+            return _style_;
+        }
+
+        global.QRY = document.querySelectorAll ? function(selector, container) {
+            return (container || document).querySelectorAll(selector);
+        }
+           : function(selector, container) {
+               style_().addRule(selector, "foo:bar");
+               var all = all_(container), resultSet = [], i = 0, l = all.length;
+               for (; i < l; i++) {
+                   if (all[i].currentStyle.foo === "bar") {
+                       resultSet[resultSet.length] = all[i];
+                   }
+               }
+               style_().cssText = "" // delete IE stylesheet.
+               return resultSet;
+           }
+    })(this);
+    /*
+    qry("body > #toolbar")
+    returns :
+    [object HTMLDivElement]
+    */
+</script>
+<script type="text/javascript">
+    function loop(fp, howlong ) {
+        var retval = null;
+        for (var j = 0; j < (howlong || 1000); j++) {retval = fp();}return retval;
+    }
+    function qry_test(loop_size) {
+        test("query for ('h2', document.body).length " + loop_size + ", times", function() {
+             expect(1);
+                equals(loop(function() {
+                    return QRY("h2", document.body).length
+                }, loop_size),
+              "2", "QRY('h2', document.body).length returned ")
+        });
+    }
+    function jquert_test(loop_size) {
+        test("query for ('h2', document.body).length " + loop_size + ", times", function() {
+            expect(1);
+                equals(loop(function() {
+                    return $("h2", document.body).length
+                }, loop_size),
+              "2", "$('h2', document.body).length returned ");
+        });
+    }
+    $(document).ready(function() {
+        try {
+            var USE_QRY = document.location.href.match(/qry/i) != null, loop_size = 10000 ;
+            debugger;
+            module("Querying");
+            //if (USE_QRY)
+                qry_test(loop_size)
+            //else
+            //    jquert_test(loop_size);
+        } catch (x) {
+            alert(x + "");
+        }
+
+    });
+  </script>
+</head>
+<body>
+  <h1 id="qunit-header">DBJ*JSLib&trade;</h1>
+ <h2 id="qunit-banner"></h2>
+ <h2 id="qunit-userAgent"></h2>
+ <ol id="qunit-tests"></ol>
+</body>
+</html>
