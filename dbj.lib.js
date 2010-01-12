@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 1 $$Date: 11/01/10 16:00 $
+/// $Revision: 3 $$Date: 12/01/10 17:02 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /*@cc_on
@@ -20,8 +20,8 @@
 
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 11/01/10 16:00 $"; } };
-    dbj.version = "1." + "$Revision: 1 $".match(/\d+/);
+	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 12/01/10 17:02 $"; } };
+    dbj.version = "1." + "$Revision: 3 $".match(/\d+/);
     /// <summary>
     /// The DBJ library namespace.
     /// dbj = top.dbj
@@ -47,21 +47,13 @@
     };
 
     //-------------------------------------------------------------------------------------
-    dbj.json = {
-        anyparse: function(data) {
-            // vs JSON parse this will always work, even in the case of "non standard" JSON strings
-            //  dbj.json.parse ("{ 'a':1 }")
-            // will work even that a proper string should be : '{"a":1}'
-            return (new Function("return " + ("string" === typeof data ? data : "{}")))();
-        }
-    }
-
+    dbj.json = {};
+    var         rx0 = /^[\],:{}\s]*$/,
+                rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
+                rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
+                rx3 = /(?:^|:|,)(?:\s*\[)+/g;
     dbj.json.ok_string = function(data) {
-        return /^[\],:{}\s]*$/.test(
-            data.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, "@")
-            .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, "]")
-            .replace(/(?:^|:|,)(?:\s*\[)+/g, "")
-        );
+        return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
     }
 
     dbj.json.nonstandard = function() {
@@ -73,7 +65,7 @@
  (window.JSON && ("function" === typeof window.JSON.parse)) ?
        dbj.json.nonstandard ?
          function json_parse(data) {
-    if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
+             if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
              return window.JSON.parse(data);
          }
       : // else 
@@ -82,7 +74,7 @@
          }
 : // else 
 function json_parse(data) {
-         if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
+    if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
     return (new Function("return " + data))();
 }
 ;
