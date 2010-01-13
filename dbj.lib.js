@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 3 $$Date: 12/01/10 17:02 $
+/// $Revision: 4 $$Date: 12/01/10 17:40 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /*@cc_on
@@ -20,8 +20,8 @@
 
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 12/01/10 17:02 $"; } };
-    dbj.version = "1." + "$Revision: 3 $".match(/\d+/);
+	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 12/01/10 17:40 $"; } };
+    dbj.version = "1." + "$Revision: 4 $".match(/\d+/);
     /// <summary>
     /// The DBJ library namespace.
     /// dbj = top.dbj
@@ -122,7 +122,7 @@ function json_parse(data) {
         ///	</param>
         var left_brace = (dbj.role.name(O) === "Array" ? "[" : "{"), rigt_brace = (left_brace === "[" ? "]" : "}"), r = left_brace;
         for (var E in O) {
-            if (false === O.hasOwnProperty(E) && !drill) continue; // do not process inherited properties
+            if (O.hasOwnProperty === "function" && (false === O.hasOwnProperty(E) && !drill)) continue; // do not process inherited properties
             if ("object" != typeof O[E]) {
                 if ("string" == typeof (O[E]))
                     r += " " + E + ": '" + O[E] + "',";
@@ -144,14 +144,10 @@ function json_parse(data) {
         /// <summary>
         /// cross browser xml doc creation 
         /// </summary>
-        doc: function() {
-            if (document.implementation &&
-                       document.implementation.createDocument) {
-                return document.implementation.createDocument("", "", null);
-            } else {
-                return new ActiveXObject("MSXML2.DOMDocument");
-            }
-        }
+        doc: (document.implementation && "function" === typeof document.implementation.createDocument) ?
+                function () { return document.implementation.createDocument("", "", null); }
+            :
+                function () { return new ActiveXObject("MSXML2.DOMDocument");} 
     }
 
     /*
@@ -625,7 +621,7 @@ new_line: (new RegExp).compile("\\n+|\\r+","mg")
     }
 };
 // 
-window.roleof = dbj.role.name ;
+window.roleof = dbj.roleof = dbj.role.name ;
 //
 /// generate dbj.role.names object, with distinctive role names
 /// and their type ID's
