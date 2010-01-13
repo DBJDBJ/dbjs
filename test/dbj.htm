@@ -41,7 +41,7 @@
                                  return fun();
                              }, looplen),
                              expected,
-                             (looplen > 1 ? looplen + " x " : "") + ("" + fun).replace(/^.+\{/, "").replace(/\}.*$/, "") + " "
+                             (looplen > 1 ? looplen + " x " : "") + ("" + fun)/*.replace(/^.+\{/, "").replace(/\}.*$/, "")*/ + " "
                          );
                       }
                   }
@@ -56,7 +56,7 @@
                 Why ? 
                 TEST.test second argument is NOT a legal JSON.
                 It is much easier to write tests in this format, but that is bad JSON since it contains functions.
-                in the future we mightreceive test input as a JSON  string from the server side. 
+                in the future we might receive test input as a JSON  string from the server side. 
                 And bad JSON will not be accepted by JSON.parse()
                 Purpose of this method is to normalize input  from the legal JSON format
                 */
@@ -66,41 +66,60 @@
                     fun = bad_arr[L][0];
                     expected = bad_arr[L][1];
                     looplen = bad_arr[L][2] || 1;
-                    if (!fun || "string" !== typeof fun) throw "TEST.legalize(): function source not found where it should be ?";
-                    if (!expected) throw "TEST.legalize(): expected retval not found where it should be ?";
+                    if (!fun || "string" !== typeof fun) throw "TEST.normalize_input(): function source not found where it should be ?";
+                    if (!expected) throw "TEST.normalize_input(): expected retval not found where it should be ?";
                     // transform the function source into the function
-                    // only no-arguments functions are dealt with
+                    // only no-argument anonimous functions are dealt with
                     fun = new Function(fun);
-                    if (!fun || "function" !== typeof fun) throw "TEST.legalize(): function transformation went wrong.";
+                    if (!fun || "function" !== typeof fun) throw "TEST.normalize_input(): function transformation went wrong.";
                     retval.push(
                          [fun, expected, looplen]
                     );
                 }
                 return retval;
+            },
+            load: function(tests) {
+                for (var module_name in tests) {
+                    module(module_name);
+                    for (var test_name in tests[module_name]) {
+                        this.test(test_name, tests[module_name][test_name]);
+                    }
+                }
             }
         };
     })(this);
     //-------------------------------------------------------------------------------------
     this.onload = function() {
         try {
-            var looplen = document.location.href.match(/looplen/i), looplen = looplen ?  parseInt(looplen) : 1 ;
-            module("DBJS");
-            TEST.test("JSON services",
-                [
-                    [function() { return dbj.json.ok_string('{"a":1}') }, true],
-                    [function() { return dbj.json.nonstandard }, false],
-                    [function() { return "object" === typeof dbj.json.parse('{ "a":1 }')}, true]
-                ]
-            );
-            TEST.test("Object creation services",
-                [
-                    [function() { return 1 === dbj.create(dbj.json.parse('{ "a":1 }')).a;}, true]
-                ]
-            );
+            TEST.load(tests);
         } catch (x) {
             alert(x + "");
         }
-
     };
+  </script>
+  <script type="text/javascript">
+      var tests = {
+      "DBJS": {  // begin module "DBJS"
+                "JSON services" :
+                    [
+                        [function() { return dbj.json.ok_string('{"a":1}') }, true],
+                        [function() { return dbj.json.nonstandard }, false],
+                        [function() { return "object" === typeof dbj.json.parse('{ "a":1 }') }, true]
+                    ],
+                "Object creation services" :
+                    [
+                        [function() { return 1 === dbj.create(dbj.json.parse('{ "a":1 }')).a; }, true]
+                    ],
+                "HTML services" :
+                    [
+                        [function() { return dbj.decode('<div id="a" rel=\'r&l\' >'); }, "&lt;div id=&quot;a&quot; rel=&quot;r&amp;l&quot; &gt;"]
+                    ],
+                "Utilities":
+                    [
+                       [function() { return "string" === typeof dbj.reveal(document.location); }, true],
+                       [function() { return dbj.xml.doc().load("<root />"); }, true]
+                    ]
+              } // eof module "DBJS"
+      }         // eof tests
   </script>
 </html>
