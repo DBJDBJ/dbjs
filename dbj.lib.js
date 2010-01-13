@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 4 $$Date: 12/01/10 17:40 $
+/// $Revision: 5 $$Date: 13/01/10 1:44 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /*@cc_on
@@ -20,8 +20,8 @@
 
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 12/01/10 17:40 $"; } };
-    dbj.version = "1." + "$Revision: 4 $".match(/\d+/);
+	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 13/01/10 1:44 $"; } };
+    dbj.version = "1." + "$Revision: 5 $".match(/\d+/);
     /// <summary>
     /// The DBJ library namespace.
     /// dbj = top.dbj
