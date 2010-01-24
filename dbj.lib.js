@@ -321,9 +321,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
 //-----------------------------------------------------------------------------
 (function(undefined) {
 
-    var STR_PAD_LEFT = 1;
-    var STR_PAD_RIGHT = 2;
-    var STR_PAD_BOTH = 3;
+    var STR_PAD_LEFT = 1, STR_PAD_RIGHT = 2, STR_PAD_BOTH = 3;
 
     function pad(str, opt) {
 
@@ -342,13 +340,14 @@ var fs_ = tos.call(function() { }),  /* function signature */
                     var left = padlen - right;
                     return Array(left + 1).join(pad) + str + Array(right + 1).join(pad);
                 },
-                /* default is STR_PAD_RIGHT */
+        /* default is STR_PAD_RIGHT */
                 function() {
                     return str + Array(len + 1 - str.length).join(pad);
                 }
          )();
     }
 
+    // System-wide string constants
     String.empty = "";
     String.space = " ";
     String.F = "function";
@@ -362,7 +361,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
     String.R = "\r";
 
     if (String.F !== typeof "".minus)
-        String.prototype.minus = function( what_ ) {
+        String.prototype.minus = function(what_) {
             ///<summary>
             /// "ABCBDBEB".minus("B"), returns : "ACDE"
             /// Argument is optional, by default is is one empty space
@@ -371,16 +370,20 @@ var fs_ = tos.call(function() { }),  /* function signature */
             /// reg.exp. given does not require 'g' or 'm' modifier
             /// if argument is not found in the original, the original is returned
             ///</summary>
-            return (this.split(what_ || String.space )).join( String.empty ) ;
+            return (this.split(what_ || String.space)).join(String.empty);
         }
 
-    if (String.F !== typeof "".trim)
+    if (String.F !== typeof "".trim) {
+        ///<summary>
+        // String.trim() ES5
+        /// due to the bug in IE where "\u00A0" is not covered by \s
+        /// we have to explicitly add it to the regexp
+        ///</summary>
+        var Ltrim = /^[\s\u00A0]+/, Rtrim = /[\s\u00A00]+$/ ;
         String.prototype.trim = function() {
-            ///<summary>
-            // String.trim() ECMA5
-            ///</summary>
-            return this.replace(/^\s+|\s+$/g, '');
+            return this.replace(Ltrim, String.empty).replace(Rtrim, String.empty );
         }
+    }
 
     if (String.F !== typeof "".reverse)
         String.prototype.reverse = function() {
@@ -466,7 +469,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
                 var idx = 1 * $0.match(/\d+/)[0]; return args[idx] ? args[idx] : (args[idx] === "" ? "" : $0);
             }
      );
-    }
+        }
 
 
 })();
