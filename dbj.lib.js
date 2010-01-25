@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 8 $$Date: 25/01/10 13:24 $
+/// $Revision: 9 $$Date: 25/01/10 13:35 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function($, window, undefined) {
@@ -17,8 +17,8 @@
 
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 25/01/10 13:24 $"; } };
-    dbj.version = "1." + "$Revision: 8 $".match(/\d+/)
+	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 25/01/10 13:35 $"; } };
+    dbj.version = "1." + "$Revision: 9 $".match(/\d+/)
     empty = function() { };
 
     // Dean Edwards obfuscated example : isMSIE = eval("false;/*@cc_on@if(@\x5fwin32)isMSIE=true@end@*/");
@@ -568,6 +568,16 @@ new_line: (new RegExp).compile("\\n+|\\r+","mg")
 // browser feature checks , specific for DBJs only
 //
 (function() {
+
+    try {
+        var s = new ActiveXObject("Scriptlet.TypeLib");
+        dbj.in_win_jscript = true;
+    } catch (x) {
+        dbj.in_win_jscript = false;
+    }
+
+    if (dbj.in_win_jscript) return; // not in a browser
+
     dbj.browser = { support: {
         // CSS properties on new elements still not attached to the document
         // works in IE
@@ -655,14 +665,14 @@ for (var j in dbj.role.names) {
         four = function() { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); },
     // 'fake' GUID for browser hosts
         make = function() {
-            return ( four() +
+            return (four() +
              four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
         };
 
-        /*
-This will work outside of browsers
-    var x_ = null;
+    if (dbj.in_win_jscript) {
+        var x_ = null;
         dbj.GUID = function(empty_) {
+        //   This will work outside of browsers only
         try {
         x_ = x_ || new ActiveXObject("Scriptlet.TypeLib");
         return empty_ ? empty : (x_.GUID);
@@ -672,8 +682,10 @@ This will work outside of browsers
         return empty_ ? empty : make();
         }
         }
-        */
-dbj.GUID = function ( null_ ) { return null_ ? empty : make(); }
+    }
+    else {
+        dbj.GUID = function(null_) { return null_ ? empty : make(); }
+    }
 
 })();
 
