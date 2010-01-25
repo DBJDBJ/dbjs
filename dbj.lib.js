@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 5 $$Date: 13/01/10 1:44 $
+/// $Revision: 6 $$Date: 25/01/10 0:18 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /*@cc_on
@@ -20,8 +20,8 @@
 
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 13/01/10 1:44 $"; } };
-    dbj.version = "1." + "$Revision: 5 $".match(/\d+/);
+	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 25/01/10 0:18 $"; } };
+    dbj.version = "1." + "$Revision: 6 $".match(/\d+/);
     /// <summary>
     /// The DBJ library namespace.
     /// dbj = top.dbj
@@ -645,28 +645,39 @@ for (var j in dbj.role.names) {
 })();
 
 //-----------------------------------------------------------------------------------------------------
+var empty = function () {} ;
+dbj.konsole = {
+    cons: !!window.console ? window.console : { log: empty, warn: empty, error: empty, group: empty, groupEnd: empty },
+    bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
+    eg: function() { this.cons.groupEnd(); return this; },
+    log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
+    warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
+    error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
+    terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; }
+};
+//-----------------------------------------------------------------------------------------------------
 (function() {
-    var empty = "00000000-0000-0000-0000-000000000000";
+    var empty = "00000000-0000-0000-0000-000000000000",
+        four = function() { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); },
+    // 'fake' GUID for non-window and non IE hosts
+        make = function() {
+            return ( four() +
+             four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
+        };
+
     /*@cc_on@if ( @_win32 )
-    var x_ = null;  
+    var x_ = null;
     dbj.GUID = function(empty_) {
         try {
             x_ = x_ || new ActiveXObject("Scriptlet.TypeLib");
             return empty_ ? empty : (x_.GUID);
         }
         catch (e) {
-            return ("error creating dbj.GUID");
+            dbj.konsole.warn("error creating dbj.GUID : " + e.message);
+            return empty_ ? empty : make();
         }
     }
-    @else @*/
-// 'fake' GUID for non-window and non IE hosts
-var make = function() {        
-     return (Guid.four() + 
-             Guid.four() + "-" + Guid.four() + "-" + Guid.four() + "-" + Guid.four() + "-" + 
-             Guid.four() +       Guid.four() +       Guid.four());
-    },
-four = function () {  return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); } ;
-
+    /*@else @*/
 dbj.GUID = function ( empty_ ) { empty_ ? return empty : return make(); }
 /*@end
     @*/
