@@ -117,7 +117,8 @@
                 "Utilities":
                     [
                        [function() { return "string" === typeof dbj.reveal(document.location); }, true],
-                       [function() { return dbj.xml.doc().load("<root />"); }, true]
+                       [function() { return dbj.xml.doc().load("<root />"); }, true],
+                       [function() { return typeof dbj.GUID(); }, "string"]
                     ]
               } // eof module "DBJS"
       }         // eof tests
