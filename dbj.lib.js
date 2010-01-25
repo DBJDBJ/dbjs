@@ -6,33 +6,38 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 6 $$Date: 25/01/10 0:18 $
+/// $Revision: 8 $$Date: 25/01/10 13:24 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
-/*@cc_on
-@set @DBJ_MSIE = (1===1)
-@if (@DBJ_MSIE)
-// This DBJ code conditionaly in IE only
-@end
-@*/
-
 (function($, window, undefined) {
+/// <summary>
+/// The DBJ library namespace.
+/// dbj = top.dbj
+/// </summary>
 
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 25/01/10 0:18 $"; } };
-    dbj.version = "1." + "$Revision: 6 $".match(/\d+/);
-    /// <summary>
-    /// The DBJ library namespace.
-    /// dbj = top.dbj
-    /// </summary>
+	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 25/01/10 13:24 $"; } };
+    dbj.version = "1." + "$Revision: 8 $".match(/\d+/)
+    empty = function() { };
 
     // Dean Edwards obfuscated example : isMSIE = eval("false;/*@cc_on@if(@\x5fwin32)isMSIE=true@end@*/");
     // DBJ simple solution
     dbj.isMSIE = false;
-    /*@cc_on
-    dbj.isMSIE = true;
-    @*/
+    //@cc_on    dbj.isMSIE = true;
+
+    //-----------------------------------------------------------------------------------------------------
+    var w_stat = function ( m_ ) { if ( window ) window.status = m_ ; }
+    dbj.konsole = {
+    cons: !!window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty , groupEnd: empty  },
+        bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
+        eg: function() { this.cons.groupEnd(); return this; },
+        log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
+        warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
+        error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
+        terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; }
+    };
+
 
     dbj.create = function(o) {
         ///<summary>
@@ -65,7 +70,7 @@
  (window.JSON && ("function" === typeof window.JSON.parse)) ?
        dbj.json.nonstandard ?
          function json_parse(data) {
-             if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
+             if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
              return window.JSON.parse(data);
          }
       : // else 
@@ -74,7 +79,7 @@
          }
 : // else 
 function json_parse(data) {
-    if (!dbj.json.ok_string(data)) throw new Error(0xFFFF, "Bad JSON string.");
+         if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
     return (new Function("return " + data))();
 }
 ;
@@ -297,7 +302,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
     // function F () { alert( a2a() ); }
     // var retval = callA(F,1,2,3)
     dbj.callS = function(cb) {
-        if ("function" !== typeof cb) throw new Error(0xFFFF,"dbj.callS() first argument must be a function.");
+        if ("function" !== typeof cb) dbj.konsole.terror("dbj.callS() first argument must be a function.");
         var args = a2a(arguments, 1);
         return cb.apply(this, args);
     }
@@ -645,42 +650,31 @@ for (var j in dbj.role.names) {
 })();
 
 //-----------------------------------------------------------------------------------------------------
-var empty = function () {} ;
-dbj.konsole = {
-    cons: !!window.console ? window.console : { log: empty, warn: empty, error: empty, group: empty, groupEnd: empty },
-    bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
-    eg: function() { this.cons.groupEnd(); return this; },
-    log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
-    warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
-    error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
-    terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; }
-};
-//-----------------------------------------------------------------------------------------------------
 (function() {
     var empty = "00000000-0000-0000-0000-000000000000",
         four = function() { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); },
-    // 'fake' GUID for non-window and non IE hosts
+    // 'fake' GUID for browser hosts
         make = function() {
             return ( four() +
              four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
         };
 
-    /*@cc_on@if ( @_win32 )
+        /*
+This will work outside of browsers
     var x_ = null;
-    dbj.GUID = function(empty_) {
+        dbj.GUID = function(empty_) {
         try {
-            x_ = x_ || new ActiveXObject("Scriptlet.TypeLib");
-            return empty_ ? empty : (x_.GUID);
+        x_ = x_ || new ActiveXObject("Scriptlet.TypeLib");
+        return empty_ ? empty : (x_.GUID);
         }
         catch (e) {
-            dbj.konsole.warn("error creating dbj.GUID : " + e.message);
-            return empty_ ? empty : make();
+        dbj.konsole.warn("error creating dbj.GUID : " + e.message);
+        return empty_ ? empty : make();
         }
-    }
-    /*@else @*/
-dbj.GUID = function ( empty_ ) { empty_ ? return empty : return make(); }
-/*@end
-    @*/
+        }
+        */
+dbj.GUID = function ( null_ ) { return null_ ? empty : make(); }
+
 })();
 
 //-----------------------------------------------------------------------------------------------------
@@ -704,14 +698,14 @@ dbj.GUID = function ( empty_ ) { empty_ ? return empty : return make(); }
             cb = $.fn[ns][cb || ""];
             var retval;
             if ("function" !== typeof cb) {
-                throw new Error(0xFF, "$()." + ns + "() requires callaback or its name as first argument");
+                dbj.konsole.terror("$()." + ns + "() requires callaback or its name as first argument");
             }
             try {
                 var args = Array.prototype.slice.call(arguments);
                 args.shift();
                 retval = cb.apply(this, args);
             } catch (x) {
-                throw new Error(0xFF, "Error in $()." + ns + "() plugin: " + x.message);
+            dbj.konsole.terror("Error in $()." + ns + "() plugin: " + x.message);
             }
             return retval || this;
         };
