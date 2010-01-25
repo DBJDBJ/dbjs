@@ -99,28 +99,30 @@
   </script>
   <script type="text/javascript">
       var tests = {
-      "DBJS": {  // begin module "DBJS"
-                "JSON services" :
+          "DBJS": {  // begin module "DBJS"
+              "JSON services":
                     [
                         [function() { return dbj.json.ok_string('{"a":1}') }, true],
                         [function() { return dbj.json.nonstandard }, false],
                         [function() { return "object" === typeof dbj.json.parse('{ "a":1 }') }, true]
                     ],
-                "Object creation services" :
+              "Object creation services":
                     [
                         [function() { return 1 === dbj.create(dbj.json.parse('{ "a":1 }')).a; }, true]
                     ],
-                "HTML services" :
+              "HTML services":
                     [
                         [function() { return dbj.decode('<div id="a" rel=\'r&l\' >'); }, "&lt;div id=&quot;a&quot; rel=&quot;r&amp;l&quot; &gt;"]
-                    ],
-                "Utilities":
+                    ]
+          }, // eof module "DBJS"
+          "DBJS*Utilities": {
+              "1":
                     [
                        [function() { return "string" === typeof dbj.reveal(document.location); }, true],
                        [function() { return dbj.xml.doc().load("<root />"); }, true],
                        [function() { return typeof dbj.GUID(); }, "string"]
                     ]
-              } // eof module "DBJS"
-      }         // eof tests
+          }
+}         // eof tests
   </script>
 </html>
