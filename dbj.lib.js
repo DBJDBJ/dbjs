@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 9 $$Date: 25/01/10 13:35 $
+/// $Revision: 10 $$Date: 26/01/10 15:13 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function($, window, undefined) {
@@ -14,28 +14,53 @@
     /// The DBJ library namespace.
     /// dbj = top.dbj
     /// </summary>
-
     var 
     // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = { toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 25/01/10 13:35 $"; } };
-    dbj.version = "1." + "$Revision: 9 $".match(/\d+/)
+	_dbj = dbj = top.dbj = window.dbj = {
+	    toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 26/01/10 15:13 $"; },
+	    browser: { support: { orphan_css: true} }
+	};
+    dbj.version = "1." + "$Revision: 10 $".match(/\d+/)
     empty = function() { };
 
     // Dean Edwards obfuscated example : isMSIE = eval("false;/*@cc_on@if(@\x5fwin32)isMSIE=true@end@*/");
     // DBJ simple solution
     dbj.isMSIE = false;
     //@cc_ondbj.isMSIE = true;
+    //
+    // feature checks , specific for DBJS 
 
+    try {
+        var s = new ActiveXObject("Scriptlet.TypeLib");
+        dbj.in_win_jscript = true;
+        s = null; delete s;
+    } catch (x) {
+        dbj.in_win_jscript = false;
+    }
+
+    if (!dbj.in_win_jscript) // in a browser
+    {
+        // CSS properties on new elements still not attached to the document
+        // check if CSS properties get/set is supported on newly created but still detached elements
+        // check only for W3C compliant browsers
+        if (typeof window.getComputedStyle === "function") {
+            var btn = document.createElement("button");
+            btn.style.color = "red";
+            dbj.browser.support.orphan_css = ("" !== window.getComputedStyle(btn, null).getPropertyValue("color"));
+            delete btn;
+        }
+    }
     //-----------------------------------------------------------------------------------------------------
-    var w_stat = function(m_) { if (window) window.status = m_; }
+    var w_stat = !dbj.in_win_jscript ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.status = m_; }, 1); } : function() { /* TBD */ }
     dbj.konsole = {
-        cons: !!window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty, groupEnd: empty },
+        cons: (!dbj.in_win_jscript) && !!window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty, groupEnd: empty },
         bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
         eg: function() { this.cons.groupEnd(); return this; },
         log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
         warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
         error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
-        terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; }
+        terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; },
+        not_implemented: function() { this.terror(" not implemented yet"); }
     };
 
 
@@ -56,14 +81,21 @@
     var rx0 = /^[\],:{}\s]*$/,
                 rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
                 rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
-                rx3 = /(?:^|:|,)(?:\s*\[)+/g;
+                rx3 = /(?:^|:|,)(?:\s*\[)+/g
+                ,x ;
     dbj.json.ok_string = function(data) {
         return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
     }
 
-    dbj.json.nonstandard = function() {
-        try { JSON.parse("{ a : 1 }"); return true; } catch (x) { return false; }
-    } ();
+    /*
+    IMPORTANT: FireFox has a problem with nested closures
+    */
+    try {
+        JSON.parse("{ a : 1 }");
+        dbj.json.nonstandard = true  ;
+    } catch (x) {
+        dbj.json.nonstandard = false ;
+    }
 
     // non-standard JSON stops here
     dbj.json.parse =
@@ -183,7 +215,7 @@ function json_parse(data) {
             try {
                 CB(OBJ, j);
             } catch (x) {
-            dbj.konsole.error("dbj.each() : callback failed :" + x.message);
+                dbj.konsole.error("dbj.each() : callback failed :" + x.message);
             }
         }
     }
@@ -245,7 +277,7 @@ function json_parse(data) {
 
 })(jQuery, window);
 /* EOF 'function ()' enclosure */
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 (function (global) {
 dbj.f_sig = function ( f )
 {
@@ -309,7 +341,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
     // synchro caller
     // function F () { alert( a2a() ); }
     // var retval = callA(F,1,2,3)
-    dbj.callS = function(cb) {
+    dbj.sync = function(cb) {
         if ("function" !== typeof cb) dbj.konsole.terror("dbj.callS() first argument must be a function.");
         var args = a2a(arguments, 1);
         return cb.apply(this, args);
@@ -318,15 +350,16 @@ var fs_ = tos.call(function() { }),  /* function signature */
     asynchronous caller
     function F () { alert( a2a() ); }
     callA(F,1,2,3)
-    obviously there is no return value, use: dbj.callA.retval 
+    obviously there is no return value, use: dbj.async.retval 
     */
-    dbj.callA = function(cb) {
+    dbj.async = function(cb) {
         var self = this, args = arguments, tid = window.setTimeout(function() {
             window.clearInterval(tid); tid = null; delete tid;
-            dbj.callA.retval = dbj.callS.apply(self,args);
-        },  dbj.callA.microseconds);
+            dbj.async.retval = dbj.sync.apply(self, args);
+        }, dbj.async.microseconds);
     }
-    dbj.callA.microseconds = 100;
+    dbj.async.microseconds = 100;
+    dbj.async.retval = undefined;
 })();
 
 //-----------------------------------------------------------------------------
@@ -589,36 +622,6 @@ new_line: (new RegExp).compile("\\n+|\\r+","mg")
 ///</summary>
 }
 
-})();
-
-//
-// browser feature checks , specific for DBJs only
-//
-(function() {
-
-    try {
-        var s = new ActiveXObject("Scriptlet.TypeLib");
-        dbj.in_win_jscript = true;
-    } catch (x) {
-        dbj.in_win_jscript = false;
-    }
-
-    if (dbj.in_win_jscript) return; // not in a browser
-
-    dbj.browser = { support: {
-        // CSS properties on new elements still not attached to the document
-        // works in IE
-        css_on_newborns: true
-    }
-    };
-    // check if CSS properties get/set is supported on newly created but still detached elements
-    // check W3C compliant browsers
-    if (window.getComputedStyle !== undefined) {
-        var btn = document.createElement("button");
-        btn.style.color = "red";
-        dbj.browser.support.orphan_css = ("" !== window.getComputedStyle(btn, null).getPropertyValue("color"));
-        delete btn;
-    }
 })();
 
 
