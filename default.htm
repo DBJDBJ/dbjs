@@ -106,26 +106,40 @@
                         [function() { return dbj.json.nonstandard }, false],
                         [function() { return "object" === typeof dbj.json.parse('{ "a":1 }') }, true]
                     ],
-              "Object creation services":
+              "JavaScript services":
                     [
-                        [function() { var a = { p: 1 }, b = dbj.create(a); a.x = 2; return b.x === 2; }, true]
+                        [function() { var a = { p: 1 }, b = dbj.create(a); a.x = 2; return b.x === 2; }, true],
+                        [function() { return dbj.reveal([{ a: 1 }, { b: { c: 2}}]); }, "[ 0: { a: 1 }, 1: { b: { c: 2 } } ]"],
+                        [function() { return dbj.isFunction(window.alert) }, true],
+                        [function() { return dbj.isNative(window.alert) }, true],
+                        [function() { return dbj.isObject(window.alert) }, false]
                     ],
               "HTML services":
                     [
+                       [function() { return dbj.xml.doc().load("<root />"); }, true],
                         [function() { return dbj.decode('<div id="a" rel=\'r&l\' >'); }, "&lt;div id=&quot;a&quot; rel=&quot;r&amp;l&quot; &gt;"]
                     ]
           }, // eof module "DBJS"
+          "Sync/Async calling": {
+              "1": [
+                       [function() { var r = dbj.sync(function(a, b) { return "DBJS Unit Test: dbj.sync() : " + a + b; }, 1, 2); return r }, 3],
+                       [function() { dbj.async(function(a, b) { dbj.konsole.log(a+b); return a + b; }, 1, 2); return dbj.async.retval === undefined; }, true]
+              ]
+          },
           "DBJS*Utilities": {
-              "1":[
+              "1": [
                        [function() { return typeof dbj.reveal(document.location); }, "string"],
-                       [function() { return dbj.xml.doc().load("<root />"); }, true],
-                       [function() { return typeof dbj.GUID(); }, "string"]
+                       [function() { return typeof dbj.GUID(); }, "string"],
+                       [function() { return typeof dbj.uid(); }, "string"],
+                       [function() { return dbj.prefix; }, "dbj"],
+                       [function() { return typeof dbj.now(); }, "number"],
+                       [function() { return dbj.cond(2, 1, "blue", 2, "red", /*default is*/"green"); }, "red"]
                   ],
-             " forEach() for objects. NOT arrays." : [
+              " forEach() for objects. NOT arrays.": [
                        [function() { var r; dbj.each({ a: 1 }, function(o, p) { r = o[p]; }); return r }, 1],
-                       [function() {/* array is not allowed as argument */ try { dbj.each([1, 2], function() { }); } catch (x) { return true }; return false }, true]
+                       [function() { /* array is not allowed as argument */try { dbj.each([1, 2], function() { }); } catch (x) { return true }; return false }, true]
                   ],
-              " String ulitities ":[
+              " String ulitities ": [
                 [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
                 [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
                 [function() { return "ABCD".reverse(); }, "DCBA"],
