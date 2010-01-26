@@ -10,10 +10,10 @@
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function($, window, undefined) {
-/// <summary>
-/// The DBJ library namespace.
-/// dbj = top.dbj
-/// </summary>
+    /// <summary>
+    /// The DBJ library namespace.
+    /// dbj = top.dbj
+    /// </summary>
 
     var 
     // Map over dbj in case of overwrite
@@ -24,12 +24,12 @@
     // Dean Edwards obfuscated example : isMSIE = eval("false;/*@cc_on@if(@\x5fwin32)isMSIE=true@end@*/");
     // DBJ simple solution
     dbj.isMSIE = false;
-    //@cc_on    dbj.isMSIE = true;
+    //@cc_ondbj.isMSIE = true;
 
     //-----------------------------------------------------------------------------------------------------
-    var w_stat = function ( m_ ) { if ( window ) window.status = m_ ; }
+    var w_stat = function(m_) { if (window) window.status = m_; }
     dbj.konsole = {
-    cons: !!window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty , groupEnd: empty  },
+        cons: !!window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty, groupEnd: empty },
         bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
         eg: function() { this.cons.groupEnd(); return this; },
         log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
@@ -53,7 +53,7 @@
 
     //-------------------------------------------------------------------------------------
     dbj.json = {};
-    var         rx0 = /^[\],:{}\s]*$/,
+    var rx0 = /^[\],:{}\s]*$/,
                 rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
                 rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
                 rx3 = /(?:^|:|,)(?:\s*\[)+/g;
@@ -79,7 +79,7 @@
          }
 : // else 
 function json_parse(data) {
-         if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
+    if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
     return (new Function("return " + data))();
 }
 ;
@@ -150,9 +150,9 @@ function json_parse(data) {
         /// cross browser xml doc creation 
         /// </summary>
         doc: (document.implementation && "function" === typeof document.implementation.createDocument) ?
-                function () { return document.implementation.createDocument("", "", null); }
+                function() { return document.implementation.createDocument("", "", null); }
             :
-                function () { return new ActiveXObject("MSXML2.DOMDocument");} 
+                function() { return new ActiveXObject("MSXML2.DOMDocument"); }
     }
 
     /*
@@ -174,14 +174,21 @@ function json_parse(data) {
         /// the only 100% fool proof way is to do this, is:
         /// for (var k in Object.prototype) delete Object.prototype[k];
         /// before this lib is declared or, perhaps, even periodicaly
+        /// OBJ must be object, not an array !
         ///</summary>
-        if (("Function" !== roleof(CB)) || (!OBJ)) return;
-        for (var j in OBJ)
-            if (OBJ.hasOwnProperty(j))
-            CB.call(OBJ, j, OBJ[j]);
+        if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
+        if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
+        for (var j in OBJ) {
+            if (!OBJ.hasOwnProperty(j)) continue;
+            try {
+                CB(OBJ, j);
+            } catch (x) {
+            dbj.konsole.error("dbj.each() : callback failed :" + x.message);
+            }
+        }
     }
 
-    dbj.date_diff = function(date1, date2) {
+    dbj.date = { diff: function(date1, date2) {
         ///<summary>
         ///timespan of the difference of first date and second date
         ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
@@ -202,6 +209,7 @@ function json_parse(data) {
         timediff -= secs * 1000;
         var years = parseInt(weeks / 52);
         return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
+    }
     }
 
     dbj.cond = function(v) {
@@ -384,7 +392,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
         /// due to the bug in IE where "\u00A0" is not covered by \s
         /// we have to explicitly add it to the regexp
         ///</summary>
-        var Ltrim = /^[\s\u00A0]+/, Rtrim = /[\s\u00A00]+$/ ;
+        var Ltrim = /^[\s\u00A0]+/, Rtrim = /[\s\u00A0]+$/ ;
         String.prototype.trim = function() {
             return this.replace(Ltrim, String.empty).replace(Rtrim, String.empty );
         }
@@ -425,16 +433,16 @@ var fs_ = tos.call(function() { }),  /* function signature */
     if (String.F !== typeof "".lcut)
         String.prototype.lcut = function(l, c) {
             ///<summary>
-            /// cut to size. pad on right if smaller
+            /// cut from left to size l. pad on left if smaller
             ///</summary>
-            return this.length < l ? this.rpad(l, c) : this.substr(0, l);
+    return this.length < l ? this.lpad(l, c) : this.slice(this.length - l);
         }
     if (String.F !== typeof "".rcut)
         String.prototype.rcut = function(l, c) {
             ///<summary>
-            ///cut to size. pad on left if smaller
+            ///cut from right to size l. pad on right if smaller
             ///</summary>
-            return this.length < l ? this.lpad(l, c) : this.substr(0, l);
+    return this.length < l ? this.rpad(l, c) : this.substr(0, l);
         }
 
     if (String.F !== typeof "".wrap)
@@ -471,7 +479,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
         String.prototype.format = function() {
             var args = arguments;
             return this.replace(/\{(\d|\d\d)\}/g, function($0) {
-                var idx = 1 * $0.match(/\d+/)[0]; return args[idx] ? args[idx] : (args[idx] === "" ? "" : $0);
+                var idx = 1 * $0.match(/\d+/)[0]; return args[idx] !== undefined ? args[idx] : (args[idx] === "" ? "" : $0);
             }
      );
         }
@@ -530,6 +538,25 @@ var fs_ = tos.call(function() { }),  /* function signature */
 ///<summary>
 ///usefull regular expressions
 ///</summary>
+/*
+The following table lists frequently used special characters and their Unicode value.
+
+Category	        Unicode value	        Name	Format name
+White space values	
+                    \u0009	Tab	            <TAB>
+ 	                \u000B	Vertical Tab	<VT>
+ 	                \u000C	Form Feed	    <FF>
+ 	                \u0020	Space	        <SP>
+Line terminator values	
+                    \u000A	Line Feed	    <LF>
+ 	                \u000D	Carriage Return	<CR>
+Additional Unicode escape sequence values	
+                    \u0008	Backspace	    <BS>
+ 	                \u0009	Horizontal Tab	<HT>
+ 	                \u0022	Double Quote	 "
+ 	                \u0027	Single Quote	'
+ 	                \u005C	Backslash	\
+*/
 dbj.rx = {
 catch_all: [
 ///<summary>
