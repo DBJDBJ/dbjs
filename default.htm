@@ -102,13 +102,13 @@
           "DBJS": {  // begin module "DBJS"
               "JSON services":
                     [
-                        [function() { return dbj.json.ok_string('{"a":1}') }, true],
+                        [function() { return dbj.json.ok_string('{a:1}') }, false],
                         [function() { return dbj.json.nonstandard }, false],
                         [function() { return "object" === typeof dbj.json.parse('{ "a":1 }') }, true]
                     ],
               "Object creation services":
                     [
-                        [function() { return 1 === dbj.create(dbj.json.parse('{ "a":1 }')).a; }, true]
+                        [function() { var a = { p: 1 }, b = dbj.create(a); a.x = 2; return b.x === 2; }, true]
                     ],
               "HTML services":
                     [
@@ -116,12 +116,33 @@
                     ]
           }, // eof module "DBJS"
           "DBJS*Utilities": {
-              "1":
-                    [
-                       [function() { return "string" === typeof dbj.reveal(document.location); }, true],
+              "1":[
+                       [function() { return typeof dbj.reveal(document.location); }, "string"],
                        [function() { return dbj.xml.doc().load("<root />"); }, true],
                        [function() { return typeof dbj.GUID(); }, "string"]
-                    ]
+                  ],
+             " forEach() for objects. NOT arrays." : [
+                       [function() { var r; dbj.each({ a: 1 }, function(o, p) { r = o[p]; }); return r }, 1],
+                       [function() {/* array is not allowed as argument */ try { dbj.each([1, 2], function() { }); } catch (x) { return true }; return false }, true]
+                  ],
+              " String ulitities ":[
+                [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
+                [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
+                [function() { return "ABCD".reverse(); }, "DCBA"],
+                [function() { return "A".lpad(3, "*"); }, "**A"],
+                [function() { return "A".rpad(3, "*"); }, "A**"],
+                [function() { return "A".cpad(3, "*"); }, "*A*"],
+                [function() { return "123456".lcut(3); }, "456"],
+                [function() { return "123456".rcut(3); }, "123"],
+                [function() { return "A".lcut(3, "*"); }, "**A"],
+                [function() { return "A".rcut(3, "*"); }, "A**"],
+                [function() { return "A".wrap("L", "R"); }, "LAR"],
+                [function() { return "123456".has("3"); }, true],
+                [function() { return "{0}{1}{2}".format(1, 2, 3); }, "123"],
+                [function() { return "{0}{1}{2}".format(0); }, "0{1}{2}"],
+                [function() { return "{99}".format("!"); }, "{99}"]
+              ]
+
           }
 }         // eof tests
   </script>
