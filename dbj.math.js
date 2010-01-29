@@ -89,15 +89,22 @@
         return !R ? f : Math.round(f) + "." + Math.ceil(R[0] * k);
     };
     Number.prototype.c2f = function() {
+        ///<summary>
+        /// Celsius to Farenheit
+        ///<summary/>
         return this * 1.8 + 32;
     }
     Number.prototype.f2c = function() {
+        ///<summary>
+        /// Farenheit to Celsius 
+        ///<summary/>
         return 5 / 9 * (this - 32);
     }
 
     // to convert radians to degrees divide by (Math.PI / 180), and multiply by this to convert the other way.
-    Math.r2d = function(r) { return r / (Math.PI / 180); }
-    Math.d2r = function(d) { return d * (Math.PI / 180); }
+    var pi_over_180 = Math.PI / 180;
+    Math.r2d = function(r) { return r / pi_over_180; }
+    Math.d2r = function(d) { return d * pi_over_180; }
 
     Number.prototype.r2d() = function() { return Math.r2d.call(this); }
     Number.prototype.d2r() = function() { return Math.d2r.call(this); }
@@ -117,6 +124,18 @@
     }
     Array.prototype.min = function() {
         return Math.min.apply({}, this)
+    }
+
+    Array.max = function(arr) {
+        return Array.prototype.max.call(arr);
+    }
+
+    Array.min = function(arr) {
+        return Array.prototype.min.call(arr);
+    }
+
+    Array.sum = function(arr) {
+        return Array.prototype.sum.call(arr);
     }
 
 })(window, dbj);
