@@ -89,10 +89,8 @@ $(function() {
         H = H || "";
         if ("string" !== typeof H) H = ("" + H);
         return H.replace(/./mg, function(ch) {
-            if (ch === '<') return "&lt;";
-            if (ch === '>') return "&gt;";
-            if (ch === '&') return "&amp;";
-            if (ch === '"') return "&quot;";
+            if (ch === '<') return "&lt;";  if (ch === '>') return "&gt;";
+            if (ch === '&') return "&amp;"; if (ch === '"') return "&quot;";
             if (ch === "'") return "&quot;";
             return ch;
         });
