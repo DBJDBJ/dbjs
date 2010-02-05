@@ -20,7 +20,7 @@ this says that first file loaded OK, but second did not
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 2 $$Date: 4/02/10 17:26 $
+/// $Revision: 3 $$Date: 5/02/10 14:12 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 
@@ -54,7 +54,7 @@ this says that first file loaded OK, but second did not
             var require_ = function(namespace, url) {
                 url = url || default_url;
                 if (!cache[namespace]) {
-                    var xhr = new XMLHttpRequest;
+                    var xhr = XMLHttpRequest() ;
                     xhr.open("GET", url, false);
                     xhr.send(null);
                     insert_script(namespace, xhr.responseText);
@@ -75,7 +75,6 @@ this says that first file loaded OK, but second did not
     var cfg_att = "_CFG_", pth_att = "_PATH_";
 
     var loader = function(window, $, LOG_METHOD, undefined) {
-        debugger;
         $cfg = $("script[" + cfg_att + "][src]");
         if ($cfg.length < 1) {
             throw new Error(0xFF, "At least one script element must have valid both src and " + cfg_att + " attributes");
@@ -101,10 +100,9 @@ this says that first file loaded OK, but second did not
             cfg_json = data;
             for (var js in cfg_json) {
                 $.getScript(CFG_PATH + js, function(data, stat) {
-                    // data should be javascript
-                    // this; is the options for this ajax request
+                    // save the status for this file
                     cfg_json[js] = stat;
-                    LOG_METHOD("Loading:" + CFG_PATH + js + " :status: " + stat );
+                    // LOG_METHOD("Loading:" + CFG_PATH + js + " :status: " + stat );
                 });
             }
         });
