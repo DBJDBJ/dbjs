@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 10 $$Date: 26/01/10 15:13 $
+/// $Revision: 12 $$Date: 8/02/10 16:26 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function($, window, undefined) {
@@ -17,10 +17,10 @@
     var 
     // Map over dbj in case of overwrite
 	_dbj = dbj = top.dbj = window.dbj = {
-	    toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 26/01/10 15:13 $"; },
+	    toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 8/02/10 16:26 $"; },
 	    browser: { support: { orphan_css: true} }
 	};
-    dbj.version = "1." + "$Revision: 10 $".match(/\d+/)
+    dbj.version = "1." + "$Revision: 12 $".match(/\d+/)
     empty = function() { };
 
     // Dean Edwards obfuscated example : isMSIE = eval("false;/*@cc_on@if(@\x5fwin32)isMSIE=true@end@*/");
@@ -77,12 +77,212 @@
     };
 
     //-------------------------------------------------------------------------------------
+    // BEGIN : ES5 compatibility
+    // GENERICS : array generics can be applied to every object that has a length property
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== Array.prototype.indexOf) {
+        Array.prototype.indexOf = function(elt /*, from*/) {
+            var len = this.length >>> 0, from = Number(arguments[1]) || 0;
+            from = (from < 0) ? Math.ceil(from) : Math.floor(from);
+            if (from < 0) from += len;
+
+            for (; from < len; from++) {
+                if (from in this && this[from] === elt)
+                    return from;
+            }
+            return -1;
+        };
+    }
+    // Generic variant
+    if ("function" !== Array.indexOf) {
+        Array.indexOf = function(obj, elt) {
+            return Array.prototype.indexOf.call(obj, elt);
+        }
+    }
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== Array.prototype.lastIndexOf) {
+        Array.prototype.lastIndexOf = function(elt /*, from*/) {
+            var len = this.length, from = Number(arguments[1]);
+            if (isNaN(from)) {
+                from = len - 1;
+            }
+            else {
+                from = (from < 0) ? Math.ceil(from) : Math.floor(from);
+                if (from < 0) from += len;
+                else if (from >= len) from = len - 1;
+            }
+
+            for (; from > -1; from--) {
+                if (from in this && this[from] === elt) return from;
+            }
+            return -1;
+        };
+    }
+    // Generic variant
+    if ("function" !== Array.lastIndexOf) {
+        Array.lastIndexOf = function(obj, elt) {
+            return Array.prototype.lastIndexOf.call(obj, elt);
+        }
+    }
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== typeof Array.prototype.forEach) {
+        Array.prototype.forEach = function(fun /*, thisp*/) {
+            if (typeof fun != "function") dbj.konsole.terror("[].forEach : callback not a function");
+            var len = this.length >>> 0, thisp = arguments[1];
+            for (var i = 0, val; i < len; i++) {
+                if (i in this) {
+                    val = this[i]; // in case fun mutates this  
+                    fun.call(thisp, val, i, this);
+                }
+            }
+        };
+    }
+    // Generic variant
+    if ("function" !== Array.forEach) {
+        Array.forEach = function(obj, fun) {
+            return Array.prototype.forEach.call(obj, fun);
+        }
+    }
+
+    //[].filter 
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== typeof Array.prototype.filter) {
+        Array.prototype.filter = function(fun /*, thisp*/) {
+            if (typeof fun != "function") dbj.konsole.terror("[].filter : callback not a function");
+            var len = this.length >>> 0, res = [], thisp = arguments[1];
+            for (var i = 0, val; i < len; i++) {
+                if (i in this) {
+                    val = this[i]; // in case fun mutates this  
+                    if (fun.call(thisp, val, i, this))
+                        res.push(val);
+                }
+            }
+            return res;
+        };
+    }
+    // Generic variant
+    if ("function" !== Array.filter) {
+        Array.filter = function(obj, fun) {
+            return Array.prototype.filter.call(obj, fun);
+        }
+    }
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== Array.prototype.every) {
+        Array.prototype.every = function(fun /*, thisp*/) {
+            if (typeof fun != "function") dbj.konsole.terror("[].every : callback is not a function");
+            var len = this.length >>> 0, thisp = arguments[1];
+            for (var i = 0; i < len; i++) {
+                if (i in this && !fun.call(thisp, this[i], i, this))
+                    return false;
+            }
+            return true;
+        };
+    }
+    // Generic variant
+    if ("function" !== Array.every) {
+        Array.every = function(obj, fun) {
+        return Array.prototype.every.call(obj, fun);
+        }
+    }
+
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== Array.prototype.map) {
+        Array.prototype.map = function(fun /*, thisp*/) {
+            if (typeof fun != "function") dbj.konsole.terror("[].map : callback is not a function");
+            var len = this.length >>> 0, res = new Array(len), thisp = arguments[1];
+            for (var i = 0; i < len; i++) {
+                if (i in this)
+                    res[i] = fun.call(thisp, this[i], i, this);
+            }
+            return res;
+        };
+    }
+    // Generic variant
+    if ("function" !== Array.map) {
+        Array.map = function(obj, fun) {
+        return Array.prototype.map.call(obj, fun);
+        }
+    }
+    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
+    if ("function" !== Array.prototype.some) {
+        Array.prototype.some = function(fun /*, thisp*/) {
+            if (typeof fun != "function") dbj.konsole.terror("[].some : callback is not a function");
+            var i = 0, len = this.length >>> 0, thisp = arguments[1];
+            for (; i < len; i++) {
+                if (i in this && fun.call(thisp, this[i], i, this))
+                    return true;
+            }
+            return false;
+        };
+    }
+    if ("function" !== Array.some) {
+        Array.some = function(obj, fun) {
+        return Array.prototype.some.call(obj, fun);
+        }
+    }
+    /* reduce    
+    Summary         Apply a function against an accumulator and each value of the array (from left-to-right) 
+    as to reduce it to a single value.
+    Syntax
+    var result = array.reduce(callback[, initialValue]);
+    Parameters
+    callback        Function to execute on each value in the array.
+    initialValue    Object to use as the first argument to the first call of the callback.
+    */
+    if ("function" !== Array.prototype.reduce) {
+        Array.prototype.reduce = function(fun /*, initial*/) {
+            if (typeof fun != "function") dbj.konsole.terror("[].reduce : callback is not a function");
+            var len = this.length >>> 0;
+
+            if (len === 0 && arguments.length == 1)
+                dbj.konsole.terror("[].reduce : no value to return if no initial value and an empty array");
+
+            var i = 0;
+            if (arguments.length >= 2) { var rv = arguments[1]; }
+            else {
+                do {
+                    if (i in this) { rv = this[i++]; break; }
+                    if (++i >= len)
+                        dbj.konsole.terror("[].reduce : array contains no values, no initial value to return");
+                }
+                while (true);
+            }
+            for (; i < len; i++) {
+                if (i in this)
+                    rv = fun.call(null, rv, this[i], i, this);
+            }
+            return rv;
+        };
+    }
+    /* ES5 Examples
+    REDUCE Examples
+    Example: Sum up all values within an array
+
+    var total = [0, 1, 2, 3].reduce(function(a, b){ return a + b; });  
+    // total == 6  
+
+    Example: Flatten an array of arrays
+    var flattened = [[0,1], [2,3], [4,5]].reduce(function(a,b) {  
+    return a.concat(b);  
+    }, []);  
+    // flattened is [0, 1, 2, 3, 4, 5]  
+
+    Example: Filtering out all small values
+    The following example uses filter to create a filtered array that has all elements with values less than 10 removed.
+
+    function isBigEnough(element, index, array) {  
+    return (element >= 10);  
+    }  
+    var filtered = [12, 5, 8, 130, 44].filter(isBigEnough); 
+    */
+    // END : ES5 compatibility
+    //-------------------------------------------------------------------------------------
     dbj.json = {};
     var rx0 = /^[\],:{}\s]*$/,
                 rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
                 rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
                 rx3 = /(?:^|:|,)(?:\s*\[)+/g
-                ,x ;
+                , x;
     dbj.json.ok_string = function(data) {
         return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
     }
@@ -92,9 +292,9 @@
     */
     try {
         JSON.parse("{ a : 1 }");
-        dbj.json.nonstandard = true  ;
+        dbj.json.nonstandard = true;
     } catch (x) {
-        dbj.json.nonstandard = false ;
+        dbj.json.nonstandard = false;
     }
 
     // non-standard JSON stops here
@@ -157,24 +357,30 @@ function json_parse(data) {
         ///	<param name="O" type="object">
         ///	Reveal properties and methods of this object
         ///	</param>
-        var left_brace = (dbj.role.name(O) === "Array" ? "[" : "{"), rigt_brace = (left_brace === "[" ? "]" : "}"), r = left_brace;
-        for (var E in O) {
-            if (O.hasOwnProperty === "function" && (false === O.hasOwnProperty(E) && !drill)) continue; // do not process inherited properties
-            if ("object" != typeof O[E]) {
-                if ("string" == typeof (O[E]))
-                    r += " " + E + ": '" + O[E] + "',";
-                else
-                    r += " " + E + ": " + O[E] + ",";
-            } else {
-                if (null == O[E])
-                    r += " " + E + ": " + O[E] + ",";
-                else
-                    r += " " + E + ": " + (drill !== null ? dbj.reveal(O[E]) : O[E]) + ",";
-            }
+        var left_brace, rigt_brace, r;
+
+        // ES5 way : callback.call(thisp, this[i], i, this);
+        var callbackO = function(value, name, obj) {
+            if (!obj.hasOwnProperty(name)) return; // do not process inherited properties
+            r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name],drill) : obj[name]) + ",");
+        },
+          callbackA = function(value, name, obj) {
+              r += (" " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name],drill) : obj[name]) + ",");
+          }
+
+        if (dbj.role.name(O) === "Array") {
+            left_brace = "[", rigt_brace = "]", r = left_brace;
+            O.forEach(callbackA);
+        }
+        else if (dbj.role.name(O) === "Object") {
+            left_brace = "{", rigt_brace = "}", r = left_brace;
+            dbj.each(O, callbackO);
+        } else {
+            left_brace = "", rigt_brace = "", r = left_brace;
+            r += (O + ",");
         }
 
         return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
-
     }
 
     dbj.xml = {
@@ -213,7 +419,8 @@ function json_parse(data) {
         for (var j in OBJ) {
             if (!OBJ.hasOwnProperty(j)) continue;
             try {
-                CB(OBJ, j);
+                // ES5 way : callback.call(thisp, this[i], i, this);
+                CB.call(OBJ, OBJ[j], j, OBJ);
             } catch (x) {
                 dbj.konsole.error("dbj.each() : callback failed :" + x.message);
             }
