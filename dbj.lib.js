@@ -28,17 +28,20 @@
     dbj.isMSIE = false;
     //@cc_ondbj.isMSIE = true;
     //
+    //-----------------------------------------------------------------------------------------------------
     // feature checks , specific for DBJS 
 
     try {
         var s = new ActiveXObject("Scriptlet.TypeLib");
-        dbj.in_win_jscript = true;
+        dbj.in_a_browser = false;
         s = null; delete s;
     } catch (x) {
-        dbj.in_win_jscript = false;
+        dbj.in_a_browser = true;
     }
 
-    if (!dbj.in_win_jscript) // in a browser
+    dbj.ftr = { string_indexing: "ABC"[0] === "A" };
+
+    if (dbj.in_a_browser) // in a browser
     {
         // CSS properties on new elements still not attached to the document
         // check if CSS properties get/set is supported on newly created but still detached elements
@@ -51,9 +54,9 @@
         }
     }
     //-----------------------------------------------------------------------------------------------------
-    var w_stat = !dbj.in_win_jscript ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.status = m_; }, 1); } : function() { /* TBD */ }
+    var w_stat = dbj.in_a_browser ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.status = m_; }, 1); } : function() { /* TBD */ }
     dbj.konsole = {
-        cons: (!dbj.in_win_jscript) && !!window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty, groupEnd: empty },
+        cons: (dbj.in_a_browser) && window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty, groupEnd: empty },
         bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
         eg: function() { this.cons.groupEnd(); return this; },
         log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
@@ -95,8 +98,20 @@
     }
     // Generic variant
     if ("function" !== Array.indexOf) {
-        Array.indexOf = function(obj, elt) {
-            return Array.prototype.indexOf.call(obj, elt);
+        if (!dbj.ftr.string_indexing) {
+            Array.indexOf = function(obj, elt, from) {
+                if ("object" === typeof obj)
+                    return Array.prototype.indexOf.call(obj, elt, from);
+                else
+                    if ("string" === typeof obj)
+                    return obj.indexOf(elt, from);
+                else
+                    return -1;
+            }
+        } else { // more conformant hosts
+            Array.indexOf = function(obj, elt, from) {
+                return Array.prototype.indexOf.call(obj, elt, from);
+            }
         }
     }
     // This algorithm is exactly the one used in Firefox and SpiderMonkey.
@@ -120,8 +135,18 @@
     }
     // Generic variant
     if ("function" !== Array.lastIndexOf) {
-        Array.lastIndexOf = function(obj, elt) {
-            return Array.prototype.lastIndexOf.call(obj, elt);
+        if (dbj.ftr.string_indexing) {
+            Array.lastIndexOf = function(obj, elt) {
+                return Array.prototype.lastIndexOf.call(obj, elt);
+            }
+        } else {
+            if ("object" === typeof obj)
+                return Array.prototype.lastIndexOf.call(obj, elt, from);
+            else
+                if ("string" === typeof obj)
+                return obj.lastIndexOf(elt, from);
+            else
+                return -1;
         }
     }
     // This algorithm is exactly the one used in Firefox and SpiderMonkey.
@@ -139,9 +164,17 @@
     }
     // Generic variant
     if ("function" !== Array.forEach) {
-        Array.forEach = function(obj, fun) {
-            return Array.prototype.forEach.call(obj, fun);
-        }
+        if (dbj.ftr.string_indexing) {
+            Array.forEach = function(obj, fun) {
+                return Array.prototype.forEach.call(obj, fun);
+            }
+        } else {
+            if ("string" === typeof obj) obj = obj.split("");
+        if ("object" === typeof obj)
+            return Array.prototype.forEach.call(obj, elt, from);
+        else
+            return -1;
+    }
     }
 
     //[].filter 
@@ -163,7 +196,8 @@
     // Generic variant
     if ("function" !== Array.filter) {
         Array.filter = function(obj, fun) {
-            return Array.prototype.filter.call(obj, fun);
+        if ("string" === typeof obj) obj = obj.split("");
+        return Array.prototype.filter.call(obj, fun);
         }
     }
     // This algorithm is exactly the one used in Firefox and SpiderMonkey.
@@ -181,6 +215,7 @@
     // Generic variant
     if ("function" !== Array.every) {
         Array.every = function(obj, fun) {
+        if ("string" === typeof obj) obj = obj.split("");
         return Array.prototype.every.call(obj, fun);
         }
     }
@@ -200,6 +235,7 @@
     // Generic variant
     if ("function" !== Array.map) {
         Array.map = function(obj, fun) {
+        if ("string" === typeof obj) obj = obj.split("");
         return Array.prototype.map.call(obj, fun);
         }
     }
@@ -217,6 +253,7 @@
     }
     if ("function" !== Array.some) {
         Array.some = function(obj, fun) {
+        if ("string" === typeof obj) obj = obj.split("");
         return Array.prototype.some.call(obj, fun);
         }
     }
@@ -362,10 +399,10 @@ function json_parse(data) {
         // ES5 way : callback.call(thisp, this[i], i, this);
         var callbackO = function(value, name, obj) {
             if (!obj.hasOwnProperty(name)) return; // do not process inherited properties
-            r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name],drill) : obj[name]) + ",");
+            r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
         },
           callbackA = function(value, name, obj) {
-              r += (" " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name],drill) : obj[name]) + ",");
+              r += (" " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
           }
 
         if (dbj.role.name(O) === "Array") {
@@ -906,7 +943,7 @@ for (var j in dbj.role.names) {
              four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
         };
 
-    if (dbj.in_win_jscript) {
+    if (dbj.in_a_browser) {
         var x_ = null;
         dbj.GUID = function(empty_) {
         //   This will work outside of browsers only
