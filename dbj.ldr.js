@@ -20,7 +20,7 @@ this says that first file loaded OK, but second did not
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 4 $$Date: 10/02/10 2:05 $
+/// $Revision: 5 $$Date: 10/02/10 12:09 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
     (function(undefined) {
@@ -50,6 +50,7 @@ this says that first file loaded OK, but second did not
 	            STR_READY_STATE = "readyState",
 	            STR_URL = "url",
 	            STR_SCRIPT = "script",
+	            STR_TYPE = "type",
 	            loadedCompleteRegExp = /loaded|complete/,
 	            slice = [].slice,
 	            head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
@@ -64,9 +65,10 @@ this says that first file loaded OK, but second did not
 
         dbj.loadScript = function(options, callback) {
 
-            var script = document[STR_CREATE_ELEMENT](STR_SCRIPT), readyState;
+            var script = document[STR_CREATE_ELEMENT](STR_SCRIPT), done = false;
 
             script[STR_ASYNC] = STR_ASYNC;
+            script[STR_TYPE] = "text/javascript";
 
             if (options[STR_CHARSET]) {
                 script[STR_CHARSET] = options[STR_CHARSET];
@@ -77,8 +79,8 @@ this says that first file loaded OK, but second did not
             // Attach handlers for all browsers
             script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = function() {
 
-                if (!(readyState = script[STR_READY_STATE]) || loadedCompleteRegExp.test(readyState)) {
-
+                if (!done && (!this.readyState || this.readyState == "loaded" || this.readyState == "complete")) {
+                    done = true;
                     // Handle memory leak in IE
                     script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = null;
 
@@ -135,8 +137,8 @@ this says that first file loaded OK, but second did not
             head.appendChild(link);
         };
 
-        var cfg_att = "_CFG_", pth_att = "_PATH_"
-    , loader = function(window, $, LOG_METHOD, undefined) {
+    var cfg_att = "_CFG_", pth_att = "_PATH_", loaded_signal = "LOADED",
+    loader = function(window, $, LOG_METHOD, callback, undefined) {
         $cfg = $("script[" + cfg_att + "][src]");
         if ($cfg.length < 1) {
             throw new Error(0xFF, "At least one script element must have valid both src and " + cfg_att + " attributes");
@@ -161,32 +163,33 @@ this says that first file loaded OK, but second did not
             // this; is the options for this ajax request
             cfg_json = data;
             for (var js in cfg_json) {
-                $.getScript(CFG_PATH + js, function(data, stat) {
-                    // save the status for this file
-                    cfg_json[js] = stat;
-                    // LOG_METHOD("Loading:" + CFG_PATH + js + " :status: " + stat );
-                });
+                if (js === loaded_signal) {
+                    callback();
+                        LOG_METHOD("DONE, status: " + stat );
+                } else
+                    $.getScript(CFG_PATH + js, function(data, stat) {
+                        // save the status for this file
+                        cfg_json[js] = stat;
+                        LOG_METHOD("Loaded:" + CFG_PATH + js + " :status: " + stat );
+                    });
             }
         });
-        LOG_METHOD(JSON.stringify(cfg_json));
     };
 
         try {
             dbj.loadScript({ "url": "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" },
         function() {
-            jQuery(function() {
-                //
-                $(document.body).error(function(msg, url, line) {
-                    log_("DBJ*Loader Error: ", msg, "url: " + url, line);
-                    return false;
-                });
-
-                $(document.body).ajaxError(function(event, xhr, settings, thrownError) {
-                    log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
-                    return false;
-                });
-                loader(window, jQuery, log_);
+            //
+            $(document.body).error(function(msg, url, line) {
+                log_("DBJ*Loader Error: ", msg, "url: " + url, line);
+                return false;
             });
+
+            $(document.body).ajaxError(function(event, xhr, settings, thrownError) {
+                log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
+                return false;
+            });
+            loader(window, jQuery, log_, dbj.loaded || function() { });
         });
         } catch (x) {
             log_("ERRROR:\n" + x.message);
