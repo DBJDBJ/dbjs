@@ -6,336 +6,137 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 12 $$Date: 8/02/10 16:26 $
+/// $Revision: 14 $$Date: 10/02/10 2:05 $
 ///
-/// Dependencies : jQuery 1.3.2 or higher
-(function($, window, undefined) {
+/// Dependencies : none
+(function(window, undefined) {
+    var local = {
+        isMSFT: (/*@cc_on!@*/false),
+        in_a_browser: "undefined" === typeof WScript,
+        string_indexing: "ABC"[0] === "A"
+    }; // ftr
+
     /// <summary>
     /// The DBJ library namespace.
-    /// dbj = top.dbj
     /// </summary>
-    var 
-    // Map over dbj in case of overwrite
-	_dbj = dbj = top.dbj = window.dbj = {
-	    toString: function() { return "DBJ*JSLib(tm) " + dbj.version + " $Date: 8/02/10 16:26 $"; },
-	    browser: { support: { orphan_css: true} }
-	};
-    dbj.version = "1." + "$Revision: 12 $".match(/\d+/)
-    empty = function() { };
-
-    // Dean Edwards obfuscated example : isMSIE = eval("false;/*@cc_on@if(@\x5fwin32)isMSIE=true@end@*/");
-    // DBJ simple solution
-    dbj.isMSIE = false;
-    //@cc_ondbj.isMSIE = true;
-    //
-    //-----------------------------------------------------------------------------------------------------
-    // feature checks , specific for DBJS 
-
-    try {
-        var s = new ActiveXObject("Scriptlet.TypeLib");
-        dbj.in_a_browser = false;
-        s = null; delete s;
-    } catch (x) {
-        dbj.in_a_browser = true;
-    }
-
-    dbj.ftr = { string_indexing: "ABC"[0] === "A" };
-
-    if (dbj.in_a_browser) // in a browser
-    {
-        // CSS properties on new elements still not attached to the document
-        // check if CSS properties get/set is supported on newly created but still detached elements
-        // check only for W3C compliant browsers
-        if (typeof window.getComputedStyle === "function") {
-            var btn = document.createElement("button");
-            btn.style.color = "red";
-            dbj.browser.support.orphan_css = ("" !== window.getComputedStyle(btn, null).getPropertyValue("color"));
-            delete btn;
-        }
-    }
-    //-----------------------------------------------------------------------------------------------------
-    var w_stat = dbj.in_a_browser ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.status = m_; }, 1); } : function() { /* TBD */ }
-    dbj.konsole = {
-        cons: (dbj.in_a_browser) && window.console ? window.console : { log: w_stat, warn: w_stat, error: w_stat, group: empty, groupEnd: empty },
-        bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
-        eg: function() { this.cons.groupEnd(); return this; },
-        log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
-        warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
-        error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
-        terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; },
-        not_implemented: function() { this.terror(" not implemented yet"); }
-    };
-
-
-    dbj.create = function(o) {
-        ///<summary>
-        /// inspired by: http://javascript.crockford.com/prototypal.html
-        /// This 'works' for all cases.
-        /// dbj.create({}) returns new object inherited from object argument
-        /// dbj.create([]) returns new array  inhertied from array  argument
-        /// all "illegal" calls returns object that has empty object as a parent
-        ///</summary>
-        function F() { }; F.prototype = o || {};
-        return new F();
-    };
-
-    //-------------------------------------------------------------------------------------
-    // BEGIN : ES5 compatibility
-    // GENERICS : array generics can be applied to every object that has a length property
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== Array.prototype.indexOf) {
-        Array.prototype.indexOf = function(elt /*, from*/) {
-            var len = this.length >>> 0, from = Number(arguments[1]) || 0;
-            from = (from < 0) ? Math.ceil(from) : Math.floor(from);
-            if (from < 0) from += len;
-
-            for (; from < len; from++) {
-                if (from in this && this[from] === elt)
-                    return from;
+    var dbj = top.dbj = window.dbj = {
+        toString: function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 10/02/10 2:05 $"; },
+        version: "1." + "$Revision: 14 $".match(/\d+/),
+        empty: function() { },
+        // feature checks , specific for DBJS 
+        ftr: {
+            isMSFT: local.isMSFT,
+            in_a_browser: local.in_a_browser,
+            string_indexing: local.string_indexing
+        }, // ftr
+        browser: { support: { orphan_css: true} },
+        decode: function(H) {
+            /* quick-and-not-so-dirty html decoder */
+            if ("string" === typeof H && !!H)
+                return H.replace('<', "&lt;").replace('>', "&gt;").replace('&', "&amp;").replace('"', "&quot;").replace("'", "&quot;");
+        },
+        uid: function(uid_) {
+            /* unique identifier generator, made of dbj.prefix and the timer id. */
+            return this.prefix + (uid_ = setTimeout(function() { clearTimeout(uid_) }, 0));
+        },
+        prefix: "dbj",
+        now: function() { /* In a getTime format */return +(new Date()); },
+        alert: local.in_a_browser ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.alert(m_); }, 1); } : function() { /* TBD */ },
+        konsole: {
+            cons: (local.in_a_browser) && window.console ? window.console : { log: dbj.alert, warn: dbj.alert, error: dbj.alert, group: dbj.empty, groupEnd: dbj.empty },
+            bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
+            eg: function() { this.cons.groupEnd(); return this; },
+            log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
+            warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
+            error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
+            terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; },
+            not_implemented: function() { this.terror(" not implemented yet"); }
+        },
+        create: function(o) {
+            ///<summary>
+            /// inspired by: http://javascript.crockford.com/prototypal.html
+            /// This 'works' for all cases.
+            /// dbj.create({}) returns new object inherited from object argument
+            /// dbj.create([]) returns new array  inhertied from array  argument
+            /// all "illegal" calls returns object that has empty object as a parent
+            ///</summary>
+            function F() { }; F.prototype = o || {};
+            return new F();
+        },
+        json: {},
+        xml: {
+            /// <summary>
+            /// cross browser xml doc creation 
+            /// </summary>
+            doc: (local.in_a_browser && document.implementation && "function" === typeof document.implementation.createDocument) ?
+                function() { return document.implementation.createDocument("", "", null); }
+            :
+                function() { return new ActiveXObject("MSXML2.DOMDocument"); }
+        },
+        cond: function(v) {
+            ///<summary>
+            /// in javascript switch statement can not act as an rvalue
+            /// so one can use the following dbj.cond() :
+            /// dbj.cond() returns the value if x matches the case
+            /// arguments case and value must be in pairs
+            /// the last argument (if given) is the default value
+            ///<code>
+            /// dbj.cond( input, case1, value1, case2, value2, ..... , value_for_default )
+            ///</code>
+            /// example :
+            ///<code>
+            /// dbj.cond(2, 1, "blue", 2, "red", /*default is*/"green");
+            ///</code>
+            /// returns "red"
+            ///</summary>
+            var j = 1, L = arguments.length;
+            ///allow users to change the condition operator used to match the value given
+            ///default condition is 'equality', aka 'exact match'
+            ///this method must return true or false
+            for (; j < L; j += 2) {
+                if (this.cond_condition(v, arguments[j])) return arguments[j + 1];
             }
-            return -1;
-        };
-    }
-    // Generic variant
-    if ("function" !== Array.indexOf) {
-        if (!dbj.ftr.string_indexing) {
-            Array.indexOf = function(obj, elt, from) {
-                if ("object" === typeof obj)
-                    return Array.prototype.indexOf.call(obj, elt, from);
-                else
-                    if ("string" === typeof obj)
-                    return obj.indexOf(elt, from);
-                else
-                    return -1;
-            }
-        } else { // more conformant hosts
-            Array.indexOf = function(obj, elt, from) {
-                return Array.prototype.indexOf.call(obj, elt, from);
+            return (!arguments[j - 2]) ? undefined : arguments[j - 2];
+        },
+        cond_condition: function(a, b) { return a === b; }
+} // eof dbj {}
+
+        //-----------------------------------------------------------------------------------------------------
+        if (dbj.ftr.in_a_browser) // in a browser
+        {
+            // CSS properties on new elements still not attached to the document
+            // check if CSS properties get/set is supported on newly created but still detached elements
+            // check only for W3C compliant browsers
+            if (typeof window.getComputedStyle === "function") {
+                var btn = document.createElement("button");
+                btn.style.color = "red";
+                dbj.browser.support.orphan_css = ("" !== window.getComputedStyle(btn, null).getPropertyValue("color"));
+                delete btn;
             }
         }
-    }
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== Array.prototype.lastIndexOf) {
-        Array.prototype.lastIndexOf = function(elt /*, from*/) {
-            var len = this.length, from = Number(arguments[1]);
-            if (isNaN(from)) {
-                from = len - 1;
-            }
-            else {
-                from = (from < 0) ? Math.ceil(from) : Math.floor(from);
-                if (from < 0) from += len;
-                else if (from >= len) from = len - 1;
-            }
+        //-----------------------------------------------------------------------------------------------------
 
-            for (; from > -1; from--) {
-                if (from in this && this[from] === elt) return from;
-            }
-            return -1;
-        };
-    }
-    // Generic variant
-    if ("function" !== Array.lastIndexOf) {
-        if (dbj.ftr.string_indexing) {
-            Array.lastIndexOf = function(obj, elt) {
-                return Array.prototype.lastIndexOf.call(obj, elt);
-            }
-        } else {
-            if ("object" === typeof obj)
-                return Array.prototype.lastIndexOf.call(obj, elt, from);
-            else
-                if ("string" === typeof obj)
-                return obj.lastIndexOf(elt, from);
-            else
-                return -1;
-        }
-    }
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== typeof Array.prototype.forEach) {
-        Array.prototype.forEach = function(fun /*, thisp*/) {
-            if (typeof fun != "function") dbj.konsole.terror("[].forEach : callback not a function");
-            var len = this.length >>> 0, thisp = arguments[1];
-            for (var i = 0, val; i < len; i++) {
-                if (i in this) {
-                    val = this[i]; // in case fun mutates this  
-                    fun.call(thisp, val, i, this);
-                }
-            }
-        };
-    }
-    // Generic variant
-    if ("function" !== Array.forEach) {
-        if (dbj.ftr.string_indexing) {
-            Array.forEach = function(obj, fun) {
-                return Array.prototype.forEach.call(obj, fun);
-            }
-        } else {
-            if ("string" === typeof obj) obj = obj.split("");
-        if ("object" === typeof obj)
-            return Array.prototype.forEach.call(obj, elt, from);
-        else
-            return -1;
-    }
-    }
-
-    //[].filter 
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== typeof Array.prototype.filter) {
-        Array.prototype.filter = function(fun /*, thisp*/) {
-            if (typeof fun != "function") dbj.konsole.terror("[].filter : callback not a function");
-            var len = this.length >>> 0, res = [], thisp = arguments[1];
-            for (var i = 0, val; i < len; i++) {
-                if (i in this) {
-                    val = this[i]; // in case fun mutates this  
-                    if (fun.call(thisp, val, i, this))
-                        res.push(val);
-                }
-            }
-            return res;
-        };
-    }
-    // Generic variant
-    if ("function" !== Array.filter) {
-        Array.filter = function(obj, fun) {
-        if ("string" === typeof obj) obj = obj.split("");
-        return Array.prototype.filter.call(obj, fun);
-        }
-    }
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== Array.prototype.every) {
-        Array.prototype.every = function(fun /*, thisp*/) {
-            if (typeof fun != "function") dbj.konsole.terror("[].every : callback is not a function");
-            var len = this.length >>> 0, thisp = arguments[1];
-            for (var i = 0; i < len; i++) {
-                if (i in this && !fun.call(thisp, this[i], i, this))
-                    return false;
-            }
-            return true;
-        };
-    }
-    // Generic variant
-    if ("function" !== Array.every) {
-        Array.every = function(obj, fun) {
-        if ("string" === typeof obj) obj = obj.split("");
-        return Array.prototype.every.call(obj, fun);
-        }
-    }
-
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== Array.prototype.map) {
-        Array.prototype.map = function(fun /*, thisp*/) {
-            if (typeof fun != "function") dbj.konsole.terror("[].map : callback is not a function");
-            var len = this.length >>> 0, res = new Array(len), thisp = arguments[1];
-            for (var i = 0; i < len; i++) {
-                if (i in this)
-                    res[i] = fun.call(thisp, this[i], i, this);
-            }
-            return res;
-        };
-    }
-    // Generic variant
-    if ("function" !== Array.map) {
-        Array.map = function(obj, fun) {
-        if ("string" === typeof obj) obj = obj.split("");
-        return Array.prototype.map.call(obj, fun);
-        }
-    }
-    // This algorithm is exactly the one used in Firefox and SpiderMonkey.
-    if ("function" !== Array.prototype.some) {
-        Array.prototype.some = function(fun /*, thisp*/) {
-            if (typeof fun != "function") dbj.konsole.terror("[].some : callback is not a function");
-            var i = 0, len = this.length >>> 0, thisp = arguments[1];
-            for (; i < len; i++) {
-                if (i in this && fun.call(thisp, this[i], i, this))
-                    return true;
-            }
-            return false;
-        };
-    }
-    if ("function" !== Array.some) {
-        Array.some = function(obj, fun) {
-        if ("string" === typeof obj) obj = obj.split("");
-        return Array.prototype.some.call(obj, fun);
-        }
-    }
-    /* reduce    
-    Summary         Apply a function against an accumulator and each value of the array (from left-to-right) 
-    as to reduce it to a single value.
-    Syntax
-    var result = array.reduce(callback[, initialValue]);
-    Parameters
-    callback        Function to execute on each value in the array.
-    initialValue    Object to use as the first argument to the first call of the callback.
-    */
-    if ("function" !== Array.prototype.reduce) {
-        Array.prototype.reduce = function(fun /*, initial*/) {
-            if (typeof fun != "function") dbj.konsole.terror("[].reduce : callback is not a function");
-            var len = this.length >>> 0;
-
-            if (len === 0 && arguments.length == 1)
-                dbj.konsole.terror("[].reduce : no value to return if no initial value and an empty array");
-
-            var i = 0;
-            if (arguments.length >= 2) { var rv = arguments[1]; }
-            else {
-                do {
-                    if (i in this) { rv = this[i++]; break; }
-                    if (++i >= len)
-                        dbj.konsole.terror("[].reduce : array contains no values, no initial value to return");
-                }
-                while (true);
-            }
-            for (; i < len; i++) {
-                if (i in this)
-                    rv = fun.call(null, rv, this[i], i, this);
-            }
-            return rv;
-        };
-    }
-    /* ES5 Examples
-    REDUCE Examples
-    Example: Sum up all values within an array
-
-    var total = [0, 1, 2, 3].reduce(function(a, b){ return a + b; });  
-    // total == 6  
-
-    Example: Flatten an array of arrays
-    var flattened = [[0,1], [2,3], [4,5]].reduce(function(a,b) {  
-    return a.concat(b);  
-    }, []);  
-    // flattened is [0, 1, 2, 3, 4, 5]  
-
-    Example: Filtering out all small values
-    The following example uses filter to create a filtered array that has all elements with values less than 10 removed.
-
-    function isBigEnough(element, index, array) {  
-    return (element >= 10);  
-    }  
-    var filtered = [12, 5, 8, 130, 44].filter(isBigEnough); 
-    */
-    // END : ES5 compatibility
-    //-------------------------------------------------------------------------------------
-    dbj.json = {};
-    var rx0 = /^[\],:{}\s]*$/,
+        /*
+        IMPORTANT: FireFox has a problem with nested closures
+        */
+        try {
+            var rx0 = /^[\],:{}\s]*$/,
                 rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
                 rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
                 rx3 = /(?:^|:|,)(?:\s*\[)+/g
                 , x;
-    dbj.json.ok_string = function(data) {
-        return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
-    }
+            dbj.json.ok_string = function(data) {
+                return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
+            }
 
-    /*
-    IMPORTANT: FireFox has a problem with nested closures
-    */
-    try {
-        JSON.parse("{ a : 1 }");
-        dbj.json.nonstandard = true;
-    } catch (x) {
-        dbj.json.nonstandard = false;
-    }
+            JSON.parse("{ a : 1 }");
+            dbj.json.nonstandard = true;
+        } catch (x) {
+            dbj.json.nonstandard = false;
+        }
 
-    // non-standard JSON stops here
-    dbj.json.parse =
+        // non-standard JSON stops here
+        dbj.json.parse =
  (window.JSON && ("function" === typeof window.JSON.parse)) ?
        dbj.json.nonstandard ?
          function json_parse(data) {
@@ -352,175 +153,100 @@ function json_parse(data) {
     return (new Function("return " + data))();
 }
 ;
-    //-------------------------------------------------------------------------------------
+        //-------------------------------------------------------------------------------------
 
-    dbj.decode = function(H) {
-        /// <summary>
-        /// quick-and-not-so-dirty html decoder
-        /// </summary>
-        ///	<param name="H" type="String">
-        /// html string to be decoded
-        /// </param>
-        H = H || "";
-        if (H.length < 1) return H;
-        return H.replace(/./mg, function(ch) {
-            if (ch === '<') return "&lt;";
-            if (ch === '>') return "&gt;";
-            if (ch === '&') return "&amp;";
-            if (ch === '"') return "&quot;";
-            if (ch === "'") return "&quot;";
-            return ch;
-        });
-    }
-    dbj.uid = function(uid_) {
-        /// <summary>
-        /// unique identifier generator, made of dbj.prefix and the timer id.
-        /// </summary>
-        return dbj.prefix + (uid_ = setTimeout(function() { clearTimeout(uid_) }, 0));
-    }
-    dbj.prefix = "dbj";
-    /// <summary>
-    /// aka: 'dbj'
-    /// </summary>
-    dbj.now = function() { return +(new Date()); }
-    /// <summary>
-    /// In a getTime format
-    /// </summary>
 
-    dbj.reveal = function(O, drill) {
-        /// <summary>
-        /// More revealing than JSON.stringify()
-        /// </summary>
-        ///	<param name="O" type="object">
-        ///	Reveal properties and methods of this object
-        ///	</param>
-        var left_brace, rigt_brace, r;
+        dbj.reveal = function(O, drill) {
+            /// <summary>
+            /// More revealing than JSON.stringify()
+            /// </summary>
+            ///	<param name="O" type="object">
+            ///	Reveal properties and methods of this object
+            ///	</param>
+            var left_brace, rigt_brace, r;
 
-        // ES5 way : callback.call(thisp, this[i], i, this);
-        var callbackO = function(value, name, obj) {
-            if (!obj.hasOwnProperty(name)) return; // do not process inherited properties
-            r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
-        },
+            if (typeof Array.prototype.forEach !== "function ")
+                Array.prototype.forEach = function(callback) {
+                    for (var L = this.length >>> 0, j = 0; j < L; j++)
+                     callback.call(this, this[j], j, this);
+                }
+
+            // ES5 way : callback.call(thisp, this[i], i, this);
+            var callbackO = function(value, name, obj) {
+                if (typeof obj.hasOwnProperty === "function" && !obj.hasOwnProperty(name)) return; // do not process inherited properties
+                r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
+            },
           callbackA = function(value, name, obj) {
               r += (" " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
           }
 
-        if (dbj.role.name(O) === "Array") {
-            left_brace = "[", rigt_brace = "]", r = left_brace;
-            O.forEach(callbackA);
+            if (dbj.role.name(O) === "Array") {
+                left_brace = "[", rigt_brace = "]", r = left_brace;
+                O.forEach(callbackA);
+            }
+            else if (dbj.role.name(O) === "Object") {
+                left_brace = "{", rigt_brace = "}", r = left_brace;
+                dbj.each(O, callbackO);
+            } else {
+                left_brace = "", rigt_brace = "", r = left_brace;
+                r += (O + ",");
+            }
+
+            return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
         }
-        else if (dbj.role.name(O) === "Object") {
-            left_brace = "{", rigt_brace = "}", r = left_brace;
-            dbj.each(O, callbackO);
-        } else {
-            left_brace = "", rigt_brace = "", r = left_brace;
-            r += (O + ",");
-        }
 
-        return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
-    }
 
-    dbj.xml = {
-        /// <summary>
-        /// cross browser xml doc creation 
-        /// </summary>
-        doc: (document.implementation && "function" === typeof document.implementation.createDocument) ?
-                function() { return document.implementation.createDocument("", "", null); }
-            :
-                function() { return new ActiveXObject("MSXML2.DOMDocument"); }
-    }
-
-    /*
-    goog.object.forEach = function(obj, f, opt_obj) { 
-    for (var key in obj) { 
-    if (obj.hasOwnProperty(key)) { 
-    f.call(opt_obj, obj[key], key, obj); 
-    } 
-    } 
-    }; 
-    */
-    dbj.each = function(OBJ, CB) {
-        ///<summary>
-        /// iterate over an object and call a callback: CB( prop_name , prop_value )
-        /// where CB this will be the OBJ, so that: this[prop_name] === prope_value
-        /// on each property which is "his own" or on any
-        /// property if method hasOwnProperty is not present
-        /// this should work in many cases even if Object.prototype is abused
-        /// the only 100% fool proof way is to do this, is:
-        /// for (var k in Object.prototype) delete Object.prototype[k];
-        /// before this lib is declared or, perhaps, even periodicaly
-        /// OBJ must be object, not an array !
-        ///</summary>
-        if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
-        if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
-        for (var j in OBJ) {
-            if (!OBJ.hasOwnProperty(j)) continue;
-            try {
-                // ES5 way : callback.call(thisp, this[i], i, this);
-                CB.call(OBJ, OBJ[j], j, OBJ);
-            } catch (x) {
-                dbj.konsole.error("dbj.each() : callback failed :" + x.message);
+        dbj.each = function(OBJ, CB) {
+            ///<summary>
+            /// iterate over an object and call a callback: CB( prop_name , prop_value )
+            /// where CB this will be the OBJ, so that: this[prop_name] === prope_value
+            /// on each property which is "his own" or on any
+            /// property if method hasOwnProperty is not present
+            /// this should work in many cases even if Object.prototype is abused
+            /// the only 100% fool proof way is to do this, is:
+            /// for (var k in Object.prototype) delete Object.prototype[k];
+            /// before this lib is declared or, perhaps, even periodicaly
+            /// OBJ must be object, not an array !
+            ///</summary>
+            if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
+            if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
+            for (var j in OBJ) {
+                if ("function" === typeof OBJ.hasOwnProperty && !OBJ.hasOwnProperty(j)) continue;
+                try {
+                    // ES5 way : callback.call(thisp, this[i], i, this);
+                    CB.call(OBJ, OBJ[j], j, OBJ);
+                } catch (x) {
+                    dbj.konsole.error("dbj.each() : callback failed :" + x.message);
+                }
             }
         }
-    }
 
-    dbj.date = { diff: function(date1, date2) {
-        ///<summary>
-        ///timespan of the difference of first date and second date
-        ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
-        ///</summary>
-        ///<returns type="object" />
-        var diff = new Date();
-        diff.setTime(Math.abs(date1.getTime() - date2.getTime()));
-        var timediff = diff.getTime();
-        var weeks = Math.floor(timediff / (1000 * 60 * 60 * 24 * 7));
-        timediff -= weeks * (1000 * 60 * 60 * 24 * 7);
-        var days = Math.floor(timediff / (1000 * 60 * 60 * 24));
-        timediff -= days * (1000 * 60 * 60 * 24);
-        var hours = Math.floor(timediff / (1000 * 60 * 60));
-        timediff -= hours * (1000 * 60 * 60);
-        var mins = Math.floor(timediff / (1000 * 60));
-        timediff -= mins * (1000 * 60);
-        var secs = Math.floor(timediff / 1000);
-        timediff -= secs * 1000;
-        var years = parseInt(weeks / 52);
-        return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
-    }
-    }
-
-    dbj.cond = function(v) {
-        ///<summary>
-        /// in javascript switch statement can not act as an rvalue
-        /// so one can use the following dbj.cond() :
-        /// dbj.cond() returns the value if x matches the case
-        /// arguments case and value must be in pairs
-        /// the last argument (if given) is the default value
-        ///<code>
-        /// dbj.cond( input, case1, value1, case2, value2, ..... , value_for_default )
-        ///</code>
-        /// example :
-        ///<code>
-        /// dbj.cond(2, 1, "blue", 2, "red", /*default is*/"green");
-        ///</code>
-        /// returns "red"
-        ///</summary>
-        var j = 1, L = arguments.length;
-        for (; j < L; j += 2) {
-            if (dbj.cond.cond(v, arguments[j])) return arguments[j + 1];
+        dbj.date = { diff: function(date1, date2) {
+            ///<summary>
+            ///timespan of the difference of first date and second date
+            ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
+            ///</summary>
+            ///<returns type="object" />
+            var diff = new Date();
+            diff.setTime(Math.abs(date1.getTime() - date2.getTime()));
+            var timediff = diff.getTime();
+            var weeks = Math.floor(timediff / (1000 * 60 * 60 * 24 * 7));
+            timediff -= weeks * (1000 * 60 * 60 * 24 * 7);
+            var days = Math.floor(timediff / (1000 * 60 * 60 * 24));
+            timediff -= days * (1000 * 60 * 60 * 24);
+            var hours = Math.floor(timediff / (1000 * 60 * 60));
+            timediff -= hours * (1000 * 60 * 60);
+            var mins = Math.floor(timediff / (1000 * 60));
+            timediff -= mins * (1000 * 60);
+            var secs = Math.floor(timediff / 1000);
+            timediff -= secs * 1000;
+            var years = parseInt(weeks / 52);
+            return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
         }
-        return (!arguments[j - 2]) ? undefined : arguments[j - 2];
-    }
-    dbj.cond.cond = function(a, b) {
-        ///<summary>
-        ///allow users to change the condition operator used to match the value given
-        ///default condition is 'equality', aka 'exact match'
-        ///this method must return true or false
-        ///</summary>
-        return (a) === (b);
-    }
+        }
 
-})(jQuery, window);
-/* EOF 'function ()' enclosure */
+
+    })(window);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 (function (global) {
 dbj.f_sig = function ( f )
@@ -943,7 +669,7 @@ for (var j in dbj.role.names) {
              four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
         };
 
-    if (dbj.in_a_browser) {
+    if (dbj.ftr.in_a_browser) {
         var x_ = null;
         dbj.GUID = function(empty_) {
         //   This will work outside of browsers only
@@ -962,45 +688,4 @@ for (var j in dbj.role.names) {
     }
 
 })();
-
-//-----------------------------------------------------------------------------------------------------
-// Each dbj jquery plugin is to be declared in the "dbj" plugin "namespace" :
-// $.NS("dbj" { p1 : function (){}, p2 : function () {} }) ; // etc ...
-// And then latter called like this :
-// $.dbj("p1", a1,a2 ) // a1 and a2 are arguments for plugin dbj.p1
-(function($, window, undefined) {
-
-    $.NS = function(ns, functions)
-    ///<summary>
-    /// This is seen elsewhere on the net. An little namespace mechanism. Example:
-    /// You create your plugin inside your namespace like this:
-    /// $.NS("Z", { x: function() { return "jQuery:" + this.jquery + ", from X"; } });
-    /// above creates or uses namespace 'Z'. and adds a plugin 'x' to it
-    /// you call it like this, (with arguments or not) :
-    /// $().Z("x",1,2,3)
-    ///</summary>
-    {
-        $.fn[ns] = $.fn[ns] || function(cb) {
-            cb = $.fn[ns][cb || ""];
-            var retval;
-            if ("function" !== typeof cb) {
-                dbj.konsole.terror("$()." + ns + "() requires callaback or its name as first argument");
-            }
-            try {
-                var args = Array.prototype.slice.call(arguments);
-                args.shift();
-                retval = cb.apply(this, args);
-            } catch (x) {
-            dbj.konsole.terror("Error in $()." + ns + "() plugin: " + x.message);
-            }
-            return retval || this;
-        };
-
-        for (var fn in functions)
-            $.fn[ns][fn] = functions[fn];
-    };
-
-})(jQuery, window );
-
-
 ///<reference path="dbj.lib.js" />
