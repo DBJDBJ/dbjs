@@ -20,13 +20,19 @@ this says that first file loaded OK, but second did not
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 3 $$Date: 5/02/10 14:12 $
+/// $Revision: 4 $$Date: 10/02/10 2:05 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 
 (function() {
 
-    var insert_script = function(id_, data) {
+// we do this log-method-quickie here so that we do not depend on some library
+var log_ = (!top.window.console || !top.window.console.log) ? function() {
+    document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
+} : function() {
+    top.window.console.log([].join.call(arguments, ''));
+}
+,insert_script = function(id_, data) {
         if (!data) return data;
         var head = document.getElementsByTagName("head")[0] || document.documentElement,
 				script = document.createElement("script");
@@ -44,37 +50,50 @@ this says that first file loaded OK, but second did not
         // This arises when a base node is used (#2709).
         head.insertBefore(script, head.firstChild);
         head.removeChild(script);
-    };
+    }
+    , default_url = "http://dbj.org"
+    // (C) DBJ.ORG - Mit Style License
+    , require = (function(context, Function) {
 
+        var require_ = function(namespace, url, callback) {
 
-    if (typeof require === "undefined") {
-        var default_url = "http://dbj.org";
-        // (C) WebReflection - Mit Style License
-        var require = (function(context, Function) {
-            var require_ = function(namespace, url) {
-                url = url || default_url;
-                if (!cache[namespace]) {
-                    var xhr = XMLHttpRequest() ;
-                    xhr.open("GET", url, false);
-                    xhr.send(null);
+            callback = callback || function() { };
+
+            var xhr_handler = function() {
+                if (this.readyState == 4 && this.status == 200) {
                     insert_script(namespace, xhr.responseText);
                     cache[namespace] = true;
+                    log_(namespace + ", loaded OK");
+                    callback();
+                } else if (this.readyState == 4 && this.status != 200) {
+                    // fetched the wrong page or network error...
+                    log_("XHR ERROR: " + this.getAllResponseHeaders());
                 }
-                return true;
             };
-            var XMLHttpRequest = this.XMLHttpRequest || function() {
-                return new ActiveXObject("Microsoft.XMLHTTP");
-            };
-            var cache = {};
-            var hasOwnProperty = cache.hasOwnProperty;
-            return require_;
-        })(this, this.Function);
-    }
 
-
-    var cfg_att = "_CFG_", pth_att = "_PATH_";
-
-    var loader = function(window, $, LOG_METHOD, undefined) {
+            url = url || default_url;
+            if (!cache[namespace]) {
+                var xhr = new XMLHttpRequest;
+                try {
+                    xhr.onreadystatechange = xhr_handler;
+                    xhr.open("GET", url, false);
+                    xhr.send(null);
+                } catch (x) {
+                    /* FireFox requires this */
+                    log_("XHR error (url:" + escape(url) + "):" + x.message);
+                }
+            }
+            return true;
+        };
+        var XMLHttpRequest = this.XMLHttpRequest || function() {
+            return new ActiveXObject("Microsoft.XMLHTTP");
+        };
+        var cache = {};
+        var hasOwnProperty = cache.hasOwnProperty;
+        return require_;
+    })(this, this.Function)
+    , cfg_att = "_CFG_", pth_att = "_PATH_"
+    , loader = function(window, $, LOG_METHOD, undefined) {
         $cfg = $("script[" + cfg_att + "][src]");
         if ($cfg.length < 1) {
             throw new Error(0xFF, "At least one script element must have valid both src and " + cfg_att + " attributes");
@@ -86,7 +105,7 @@ this says that first file loaded OK, but second did not
         if (CFG_PATH === undefined) {
             // make path to be the same as script src attribute path component
             var path = $cfg.attr('src');
-            CFG_PATH =  path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./" ;
+            CFG_PATH = path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./";
         }
         var cfg_json = {};
         jQuery.ajaxSetup({ async: false }); // CRUCIAL!
@@ -110,28 +129,21 @@ this says that first file loaded OK, but second did not
         //
     };
 
-    // we do this log-method-quickie here so that we do not depend on some library
-    var log_ = (!top.window.console || !top.window.console.log) ? function() {
-        $(document.body).prepend(("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>"));
-    } : function() {
-        top.window.console.log([].join.call(arguments, ''));
-    }
-
-
     try {
-        var dumsy = require("jquery", "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js");
-        // log_("Loaded jQuery from : " + document.getElementById(guid).src);
-        jQuery(function() {
-            //
-            $(window).error(function(msg, url, line) {
-                log_("Error: ", msg, "url: " + url, line);
-            });
+        var dumsy = require("jquery", "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js",
+        function() {
+            jQuery(function() {
+                //
+                $(window).error(function(msg, url, line) {
+                    log_("Error: ", msg, "url: " + url, line);
+                });
 
-            $(window).ajaxError(function(event, xhr, settings, thrownError) {
-                log_("Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
-                return false;
+                $(window).ajaxError(function(event, xhr, settings, thrownError) {
+                    log_("Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
+                    return false;
+                });
+                loader(window, jQuery, log_);
             });
-            loader(window, jQuery, log_);
         });
     } catch (x) {
         log_("ERRROR:\n" + x.message);
