@@ -23,76 +23,119 @@ this says that first file loaded OK, but second did not
 /// $Revision: 4 $$Date: 10/02/10 2:05 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
+    (function(undefined) {
 
-(function() {
+        // we do this log-method-quickie here so that we do not depend on some library
+        var log_ = (!top.window.console || !top.window.console.log) ? function() {
+            document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
+        } : function() {
+            top.window.console.log([].join.call(arguments, ''));
+        };
 
-// we do this log-method-quickie here so that we do not depend on some library
-var log_ = (!top.window.console || !top.window.console.log) ? function() {
-    document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
-} : function() {
-    top.window.console.log([].join.call(arguments, ''));
-}
-,insert_script = function(id_, data) {
-        if (!data) return data;
-        var head = document.getElementsByTagName("head")[0] || document.documentElement,
-				script = document.createElement("script");
+        var dbj = window.dbj || (window.dbj = {});
+        STR_APPLY = "apply",
+	            STR_ASYNC = "async",
+	            STR_CACHE = "cache",
+	            STR_CALL = "call",
+	            STR_CHAIN = "chain",
+	            STR_CHARSET = "charset",
+	            STR_CREATE_ELEMENT = "createElement",
+	            STR_GET_ELEMENTS_BY_TAG_NAME = "getElementsByTagName",
+	            STR_HREF = "href",
+	            STR_LENGTH = "length",
+	            STR_ON_LOAD = "onload",
+	            STR_ON_READY_STATE_CHANGE = "onreadystatechange",
+	            STR_PLUS = "+",
+	            STR_PUSH = "push",
+	            STR_READY_STATE = "readyState",
+	            STR_URL = "url",
+	            STR_SCRIPT = "script",
+	            loadedCompleteRegExp = /loaded|complete/,
+	            slice = [].slice,
+	            head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
 
-        script.type = "text/javascript";
-        script.id = id_ ? id_ + "_script" : (+new Date) + "_script";
+        // Defer execution just enough for all browsers (especially Opera!)
+        function later(func, self) {
+            var tid = setTimeout(function() {
+                clearTimeout(tid); delete tid;
+                func[STR_APPLY](self || window, slice[STR_CALL](arguments, 2));
+            }, 0);
+        }
 
-        //if (jQuery.support.scriptEval) {
-        //  script.appendChild(document.createTextNode(data));
-        //} else {
-        script.text = data;
-        //}
+        dbj.loadScript = function(options, callback) {
 
-        // Use insertBefore instead of appendChild to circumvent an IE6 bug.
-        // This arises when a base node is used (#2709).
-        head.insertBefore(script, head.firstChild);
-        head.removeChild(script);
-    }
-    , default_url = "http://dbj.org"
-    // (C) DBJ.ORG - Mit Style License
-    , require = (function(context, Function) {
+            var script = document[STR_CREATE_ELEMENT](STR_SCRIPT), readyState;
 
-        var require_ = function(namespace, url, callback) {
+            script[STR_ASYNC] = STR_ASYNC;
 
-            callback = callback || function() { };
+            if (options[STR_CHARSET]) {
+                script[STR_CHARSET] = options[STR_CHARSET];
+            }
 
-            var xhr_handler = function() {
-                if (this.readyState == 4 && this.status == 200) {
-                    insert_script(namespace, xhr.responseText);
-                    cache[namespace] = true;
-                    log_(namespace + ", loaded OK");
-                    callback();
-                } else if (this.readyState == 4 && this.status != 200) {
-                    // fetched the wrong page or network error...
-                    log_("XHR ERROR: " + this.getAllResponseHeaders());
+            script.src = options[STR_URL];
+
+            // Attach handlers for all browsers
+            script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = function() {
+
+                if (!(readyState = script[STR_READY_STATE]) || loadedCompleteRegExp.test(readyState)) {
+
+                    // Handle memory leak in IE
+                    script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = null;
+
+                    log_(script.src, " Loaded");
+
+                    head.removeChild(script);
+
+                    if ("function" === typeof callback) {
+                        if (window.opera)
+                            later(callback);
+                        else
+                            callback();
+                    }
                 }
             };
+            // Use insertBefore instead of appendChild  to circumvent an IE6 bug.
+            // This arises when a base node is used (jQuery #2709 and #4378).
+            head.insertBefore(script, head.firstChild);
+        };
 
-            url = url || default_url;
-            if (!cache[namespace]) {
-                var xhr = new XMLHttpRequest;
-                try {
-                    xhr.onreadystatechange = xhr_handler;
-                    xhr.open("GET", url, false);
-                    xhr.send(null);
-                } catch (x) {
-                    /* FireFox requires this */
-                    log_("XHR error (url:" + escape(url) + "):" + x.message);
-                }
+        dbj.loadStyleSheet = function(options, callback) {
+
+            var link = document[STR_CREATE_ELEMENT]("link"),
+			title = options.title || "";
+
+            link.rel = "stylesheet";
+            link.type = "text/css";
+            link.media = options.media || "screen";
+            link[STR_HREF] = options[STR_URL];
+
+            if (options[STR_CHARSET]) {
+                link[STR_CHARSET] = options[STR_CHARSET];
             }
-            return true;
+
+            // Attach handlers for all browsers
+            link[STR_ON_LOAD] = link[STR_ON_READY_STATE_CHANGE] = function() {
+
+                if (!(readyState = link[STR_READY_STATE]) || loadedCompleteRegExp.test(readyState)) {
+
+                    // Handle memory leak in IE
+                    link[STR_ON_LOAD] = link[STR_ON_READY_STATE_CHANGE] = null;
+
+                    log_(link.href, " Loaded");
+
+                    if ("function" === typeof callback) {
+                        if (window.opera)
+                            later(callback);
+                        else
+                            callback();
+                    }
+                }
+            };
+            // Add it to the doc
+            head.appendChild(link);
         };
-        var XMLHttpRequest = this.XMLHttpRequest || function() {
-            return new ActiveXObject("Microsoft.XMLHTTP");
-        };
-        var cache = {};
-        var hasOwnProperty = cache.hasOwnProperty;
-        return require_;
-    })(this, this.Function)
-    , cfg_att = "_CFG_", pth_att = "_PATH_"
+
+        var cfg_att = "_CFG_", pth_att = "_PATH_"
     , loader = function(window, $, LOG_METHOD, undefined) {
         $cfg = $("script[" + cfg_att + "][src]");
         if ($cfg.length < 1) {
@@ -126,27 +169,27 @@ var log_ = (!top.window.console || !top.window.console.log) ? function() {
             }
         });
         LOG_METHOD(JSON.stringify(cfg_json));
-        //
     };
 
-    try {
-        var dumsy = require("jquery", "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js",
+        try {
+            dbj.loadScript({ "url": "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" },
         function() {
             jQuery(function() {
                 //
-                $(window).error(function(msg, url, line) {
-                    log_("Error: ", msg, "url: " + url, line);
+                $(document.body).error(function(msg, url, line) {
+                    log_("DBJ*Loader Error: ", msg, "url: " + url, line);
+                    return false;
                 });
 
-                $(window).ajaxError(function(event, xhr, settings, thrownError) {
-                    log_("Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
+                $(document.body).ajaxError(function(event, xhr, settings, thrownError) {
+                    log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
                     return false;
                 });
                 loader(window, jQuery, log_);
             });
         });
-    } catch (x) {
-        log_("ERRROR:\n" + x.message);
-    }
+        } catch (x) {
+            log_("ERRROR:\n" + x.message);
+        }
 
-})();
+    })();
