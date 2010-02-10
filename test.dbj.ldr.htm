@@ -29,20 +29,19 @@
 </div>
 </body>
 <script type="text/javascript">
-(function() {
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-    var livetip_style = "position: absolute;background-color: #cfc;padding: 4px;border: 2px solid #9c9;border-radius: 4px;-webkit-border-radius: 4px;  -moz-border-radius: 4px;";
-    var $liveTip = $('<div id="livetip" style="' + livetip_style + '"></div>').hide().appendTo('body');
-    var tipTitle = '',
+    jQuery(function() {
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
+        var livetip_style = "position: absolute;background-color: #cfc;padding: 4px;border: 2px solid #9c9;border-radius: 4px;-webkit-border-radius: 4px;  -moz-border-radius: 4px;";
+        var $liveTip = $('<div id="livetip" style="' + livetip_style + '"></div>').hide().appendTo('body');
+        var tipTitle = '',
     showTip,
     delay = 100;
 
-    $('#container').bind('mouseover mouseout mousemove', function(event) {
-        var $link = $(event.target).closest('a');
-        if (!$link.length) { return; }
-        var link = $link[0];
-
-        dbj.cond(
+        $('#container').bind('mouseover mouseout mousemove', function(event) {
+            var $link = $(event.target).closest('a');
+            if (!$link.length) { return; }
+            var link = $link[0];
+            dbj.cond(
         event.type,
         'mouseover', function() {
             showTip = window.setTimeout(function() {
@@ -75,9 +74,9 @@
             });
         }
         , /*else*/function() { /* do nothing */ }
-        ) () ;
+        )();
+        });
+        ////////////////////////////////////////////////////////////////////////////////////////////////////
     });
-    ////////////////////////////////////////////////////////////////////////////////////////////////////
-})();
 </script>
 </html>
