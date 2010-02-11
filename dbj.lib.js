@@ -9,17 +9,14 @@
 /// $Revision: 15 $$Date: 11/02/10 16:22 $
 ///
 /// Dependencies : none
-(function(window, undefined) {
+(function(global, undefined) {
     var local = {
         isMSFT: (/*@cc_on!@*/false),
         in_a_browser: "undefined" === typeof WScript,
         string_indexing: "ABC"[0] === "A"
     }; // ftr
-
-    /// <summary>
     /// The DBJ library namespace.
-    /// </summary>
-    var dbj = top.dbj = window.dbj = {
+    var dbj = global.dbj = {
         "toString" : function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 11/02/10 16:22 $"; },
         "version"  : "1." + "$Revision: 15 $".match(/\d+/),
         "empty" : function() { },
@@ -37,14 +34,14 @@
         },
         "uid" : function(uid_) {
             /* unique identifier generator, made of dbj.prefix and the timer id. */
-            return this.prefix + (uid_ = setTimeout(function() { clearTimeout(uid_) }, 0));
+        return this.prefix + (uid_ = global.setTimeout(function() { global.clearTimeout(uid_) }, 0));
         },
         "prefix": "dbj",
         "now": function() { /* In a getTime format */return +(new Date()); },
-        "alert": local.in_a_browser ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.alert(""+m_); }, 1); }
+        "alert": local.in_a_browser ? function(m_) { var tid = global.setTimeout(function() { global.clearTimeout(tid); global.alert("" + m_); }, 1); }
         : function(m_) { WScript.Echo(""+m_); },
         "konsole": {
-            cons: (local.in_a_browser) && window.console ? window.console : { log: dbj.alert, warn: dbj.alert, error: dbj.alert, group: dbj.empty, groupEnd: dbj.empty },
+        cons: (local.in_a_browser) && global.console ? global.console : { log: dbj.alert, warn: dbj.alert, error: dbj.alert, group: dbj.empty, groupEnd: dbj.empty },
             bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
             eg: function() { this.cons.groupEnd(); return this; },
             log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
@@ -69,10 +66,10 @@
             /// <summary>
             /// cross browser xml doc creation 
             /// </summary>
-            doc: (local.in_a_browser && document.implementation && "function" === typeof document.implementation.createDocument) ?
+        doc: (global.ActiveXObject === undefined ) ?
                 function() { return document.implementation.createDocument("", "", null); }
             :
-                function() { return new ActiveXObject("MSXML2.DOMDocument"); }
+                function() { return new global.ActiveXObject("MSXML2.DOMDocument"); }
         },
         "cond" : function(v) {
             ///<summary>
@@ -108,10 +105,10 @@
             // CSS properties on new elements still not attached to the document
             // check if CSS properties get/set is supported on newly created but still detached elements
             // check only for W3C compliant browsers
-            if (typeof window.getComputedStyle === "function") {
+            if (typeof global.getComputedStyle === "function") {
                 var btn = document.createElement("button");
                 btn.style.color = "red";
-                dbj.browser.support.orphan_css = ("" !== window.getComputedStyle(btn, null).getPropertyValue("color"));
+                dbj.browser.support.orphan_css = ("" !== global.getComputedStyle(btn, null).getPropertyValue("color"));
                 delete btn;
             }
         }
@@ -138,15 +135,15 @@
 
         // non-standard JSON stops here
         dbj.json.parse =
- (window.JSON && ("function" === typeof window.JSON.parse)) ?
+ (global.JSON && ("function" === typeof global.JSON.parse)) ?
        dbj.json.nonstandard ?
          function json_parse(data) {
              if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
-             return window.JSON.parse(data);
+             return global.JSON.parse(data);
          }
       : // else 
          function json_parse(data) {
-             return window.JSON.parse(data);
+         return global.JSON.parse(data);
          }
 : // else 
 function json_parse(data) {
@@ -173,8 +170,8 @@ function json_parse(data) {
                 }
 
             // ES5 way : callback.call(thisp, this[i], i, this);
-            var callbackO = function(value, name, obj) {
-                if (typeof obj.hasOwnProperty === "function" && !obj.hasOwnProperty(name)) return; // do not process inherited properties
+                var callbackO = function(value, name, obj) {
+            if (!Object.prototype.hasOwnProperty.call(obj, name)) return ; // do not process inherited properties
                 r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
             },
           callbackA = function(value, name, obj) {
