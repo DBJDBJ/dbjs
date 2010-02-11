@@ -6,50 +6,56 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 15 $$Date: 11/02/10 16:22 $
+/// $Revision: 17 $$Date: 11/02/10 17:40 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
     var local = {
-        isMSFT: (/*@cc_on!@*/false),
-        in_a_browser: "undefined" === typeof WScript,
-        string_indexing: "ABC"[0] === "A"
-    }; // ftr
-    /// The DBJ library namespace.
-    var dbj = global.dbj = {
-        "toString" : function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 11/02/10 16:22 $"; },
-        "version"  : "1." + "$Revision: 15 $".match(/\d+/),
-        "empty" : function() { },
-        // feature checks , specific for DBJS 
-        "ftr" : {
-            "isMSFT" : local.isMSFT,
-            "in_a_browser" : local.in_a_browser,
-            "string_indexing" : local.string_indexing
-        }, // ftr
-        "browser" : { "support" : { "orphan_css" : true} },
-        "decode" : function(H) {
-            /* quick-and-not-so-dirty html decoder */
-            if ("string" === typeof H && !!H)
-                return H.replace('<', "&lt;").replace('>', "&gt;").replace('&', "&amp;").replace('"', "&quot;").replace("'", "&quot;");
-        },
-        "uid" : function(uid_) {
-            /* unique identifier generator, made of dbj.prefix and the timer id. */
-        return this.prefix + (uid_ = global.setTimeout(function() { global.clearTimeout(uid_) }, 0));
-        },
-        "prefix": "dbj",
-        "now": function() { /* In a getTime format */return +(new Date()); },
-        "alert": local.in_a_browser ? function(m_) { var tid = global.setTimeout(function() { global.clearTimeout(tid); global.alert("" + m_); }, 1); }
-        : function(m_) { WScript.Echo(""+m_); },
+        "isMSFT" : (/*@cc_on!@*/false),
+        "in_a_browser" : "undefined" === typeof WScript,
+        "string_indexing" : "ABC"[0] === "A",
+        "alert_": (function(browser_host) {
+            return browser_host ? function(m_) { var tid = global.setTimeout(function() { global.clearTimeout(tid); global.alert("" + m_); }, 1); }
+        : function(m_) { WScript.Echo("" + m_); }
+        })("undefined" === typeof WScript),
         "konsole": {
-        cons: (local.in_a_browser) && global.console ? global.console : { log: dbj.alert, warn: dbj.alert, error: dbj.alert, group: dbj.empty, groupEnd: dbj.empty },
+            "cons": (function(browser_host) {
+                return browser_host && global.console
+                       ? global.console : { log: this.alert_, warn: this.alert_, error: this.alert_, group: this.empty, groupEnd: this.empty };
+            })("undefined" === typeof WScript),
             bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
             eg: function() { this.cons.groupEnd(); return this; },
             log: function(m_) { this.bg(); this.cons.log(m_ || "::"); this.eg(); return this; },
             warn: function(m_) { this.bg(); this.cons.warn(m_ || "::"); this.eg(); return this; },
             error: function(m_) { this.bg(); this.cons.error(m_ || "::"); this.eg(); return this; },
-            terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; },
+            terror: function(m_) { this.error(m_); throw "DBJS*ERROR! " + m_; return this; },
             not_implemented: function() { this.terror(" not implemented yet"); }
+        }
+    }; // local
+    /// The DBJ library namespace.
+    var dbj = global.dbj = {
+        "konsole" : local.konsole ,
+        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 11/02/10 17:40 $"; },
+        "version": "1." + "$Revision: 17 $".match(/\d+/),
+        "empty": function() { },
+        // feature checks , specific for DBJS 
+        "ftr": {
+            "isMSFT": local.isMSFT,
+            "in_a_browser": local.in_a_browser,
+            "string_indexing": local.string_indexing
+        }, // ftr
+        "browser": { "support": { "orphan_css": true} },
+        "decode": function(H) {
+            /* quick-and-not-so-dirty html decoder */
+            if ("string" === typeof H && !!H)
+                return H.replace('<', "&lt;").replace('>', "&gt;").replace('&', "&amp;").replace('"', "&quot;").replace("'", "&quot;");
         },
+        "uid": function(uid_) {
+            /* unique identifier generator, made of dbj.prefix and the timer id. */
+            return this.prefix + (uid_ = global.setTimeout(function() { global.clearTimeout(uid_) }, 0));
+        },
+        "prefix": "dbj",
+        "now": function() { /* In a getTime format */return +(new Date()); },
         "create": function(o) {
             ///<summary>
             /// inspired by: http://javascript.crockford.com/prototypal.html
@@ -66,12 +72,12 @@
             /// <summary>
             /// cross browser xml doc creation 
             /// </summary>
-        doc: (global.ActiveXObject === undefined ) ?
+            "doc": (global.ActiveXObject === undefined) ?
                 function() { return document.implementation.createDocument("", "", null); }
             :
                 function() { return new global.ActiveXObject("MSXML2.DOMDocument"); }
         },
-        "cond" : function(v) {
+        "cond": function(v) {
             ///<summary>
             /// in javascript switch statement can not act as an rvalue
             /// so one can use the following dbj.cond() :
@@ -97,22 +103,20 @@
             return (!arguments[j - 2]) ? undefined : arguments[j - 2];
         },
         cond_condition: function(a, b) { return a === b; }
-} // eof dbj {}
+    }; // eof dbj {}
 
-        //-----------------------------------------------------------------------------------------------------
-        if (dbj.ftr.in_a_browser) // in a browser
-        {
-            // CSS properties on new elements still not attached to the document
-            // check if CSS properties get/set is supported on newly created but still detached elements
-            // check only for W3C compliant browsers
-            if (typeof global.getComputedStyle === "function") {
-                var btn = document.createElement("button");
-                btn.style.color = "red";
-                dbj.browser.support.orphan_css = ("" !== global.getComputedStyle(btn, null).getPropertyValue("color"));
-                delete btn;
-            }
+    //-----------------------------------------------------------------------------------------------------
+    if (dbj.ftr.in_a_browser) // in a browser
+    {
+        // CSS properties on new elements still not attached to the document
+        // check if CSS properties get/set is supported on newly created but still detached elements
+        // check only for W3C compliant browsers
+        if (typeof global.getComputedStyle === "function") {
+            var btn = document.createElement("button");
+            btn.style.color = "red";
+            dbj.browser.support.orphan_css = ("" !== global.getComputedStyle(btn, null).getPropertyValue("color"));
+            delete btn;
         }
-        //-----------------------------------------------------------------------------------------------------
 
         /*
         IMPORTANT: FireFox has a problem with nested closures
@@ -132,9 +136,11 @@
         } catch (x) {
             dbj.json.nonstandard = false;
         }
+    }; // if in_a_browser
+    //-----------------------------------------------------------------------------------------------------
 
-        // non-standard JSON stops here
-        dbj.json.parse =
+    // non-standard JSON stops here
+    dbj.json.parse =
  (global.JSON && ("function" === typeof global.JSON.parse)) ?
        dbj.json.nonstandard ?
          function json_parse(data) {
@@ -143,7 +149,7 @@
          }
       : // else 
          function json_parse(data) {
-         return global.JSON.parse(data);
+             return global.JSON.parse(data);
          }
 : // else 
 function json_parse(data) {
@@ -151,100 +157,100 @@ function json_parse(data) {
     return (new Function("return " + data))();
 }
 ;
-        //-------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------
 
 
-        dbj.reveal = function(O, drill) {
-            /// <summary>
-            /// More revealing than JSON.stringify()
-            /// </summary>
-            ///	<param name="O" type="object">
-            ///	Reveal properties and methods of this object
-            ///	</param>
-            var left_brace, rigt_brace, r;
+    dbj.reveal = function(O, drill) {
+        /// <summary>
+        /// More revealing than JSON.stringify()
+        /// </summary>
+        ///	<param name="O" type="object">
+        ///	Reveal properties and methods of this object
+        ///	</param>
+        var left_brace, rigt_brace, r;
 
-            if (typeof Array.prototype.forEach !== "function ")
-                Array.prototype.forEach = function(callback) {
-                    for (var L = this.length >>> 0, j = 0; j < L; j++)
-                        callback.call(this, this[j], j, this);
-                }
+        if (typeof Array.prototype.forEach !== "function ")
+            Array.prototype.forEach = function(callback) {
+                for (var L = this.length >>> 0, j = 0; j < L; j++)
+                    callback.call(this, this[j], j, this);
+            }
 
-            // ES5 way : callback.call(thisp, this[i], i, this);
-                var callbackO = function(value, name, obj) {
-            if (!Object.prototype.hasOwnProperty.call(obj, name)) return ; // do not process inherited properties
-                r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
-            },
+        // ES5 way : callback.call(thisp, this[i], i, this);
+        var callbackO = function(value, name, obj) {
+            if (!Object.prototype.hasOwnProperty.call(obj, name)) return; // do not process inherited properties
+            r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
+        },
           callbackA = function(value, name, obj) {
               r += (" " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
           }
 
-            if (dbj.role.name(O) === "Array") {
-                left_brace = "[", rigt_brace = "]", r = left_brace;
-                O.forEach(callbackA);
+        if (dbj.role.name(O) === "Array") {
+            left_brace = "[", rigt_brace = "]", r = left_brace;
+            O.forEach(callbackA);
+        }
+        else if (dbj.role.name(O) === "Object") {
+            left_brace = "{", rigt_brace = "}", r = left_brace;
+            dbj.each(O, callbackO);
+        } else {
+            left_brace = "", rigt_brace = "", r = left_brace;
+            r += (O + ",");
+        }
+
+        return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
+    }
+
+
+    dbj.each = function(OBJ, CB) {
+        ///<summary>
+        /// iterate over an object and call a callback: CB( prop_name , prop_value )
+        /// where CB this will be the OBJ, so that: this[prop_name] === prope_value
+        /// on each property which is "his own" or on any
+        /// property if method hasOwnProperty is not present
+        /// this should work in many cases even if Object.prototype is abused
+        /// the only 100% fool proof way is to do this, is:
+        /// for (var k in Object.prototype) delete Object.prototype[k];
+        /// before this lib is declared or, perhaps, even periodicaly
+        /// OBJ must be object, not an array !
+        ///</summary>
+        if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
+        if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
+        for (var j in OBJ) {
+            if (!Object.prototype.hasOwnProperty.call(OBJ, j)) continue;
+            try {
+                // ES5 way : callback.call(thisp, this[i], i, this);
+                CB.call(OBJ, OBJ[j], j, OBJ);
+            } catch (x) {
+                dbj.konsole.error("dbj.each() : callback failed :" + x.message);
             }
-            else if (dbj.role.name(O) === "Object") {
-                left_brace = "{", rigt_brace = "}", r = left_brace;
-                dbj.each(O, callbackO);
-            } else {
-                left_brace = "", rigt_brace = "", r = left_brace;
-                r += (O + ",");
-            }
-
-            return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
         }
+    }
+
+    dbj.date = { diff: function(date1, date2) {
+        ///<summary>
+        ///timespan of the difference of first date and second date
+        ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
+        ///</summary>
+        ///<returns type="object" />
+        var diff = new Date();
+        diff.setTime(Math.abs(date1.getTime() - date2.getTime()));
+        var timediff = diff.getTime();
+        var weeks = Math.floor(timediff / (1000 * 60 * 60 * 24 * 7));
+        timediff -= weeks * (1000 * 60 * 60 * 24 * 7);
+        var days = Math.floor(timediff / (1000 * 60 * 60 * 24));
+        timediff -= days * (1000 * 60 * 60 * 24);
+        var hours = Math.floor(timediff / (1000 * 60 * 60));
+        timediff -= hours * (1000 * 60 * 60);
+        var mins = Math.floor(timediff / (1000 * 60));
+        timediff -= mins * (1000 * 60);
+        var secs = Math.floor(timediff / 1000);
+        timediff -= secs * 1000;
+        var years = parseInt(weeks / 52);
+        return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
+    }
+    }
 
 
-        dbj.each = function(OBJ, CB) {
-            ///<summary>
-            /// iterate over an object and call a callback: CB( prop_name , prop_value )
-            /// where CB this will be the OBJ, so that: this[prop_name] === prope_value
-            /// on each property which is "his own" or on any
-            /// property if method hasOwnProperty is not present
-            /// this should work in many cases even if Object.prototype is abused
-            /// the only 100% fool proof way is to do this, is:
-            /// for (var k in Object.prototype) delete Object.prototype[k];
-            /// before this lib is declared or, perhaps, even periodicaly
-            /// OBJ must be object, not an array !
-            ///</summary>
-            if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
-            if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
-            for (var j in OBJ) {
-                if (!Object.prototype.hasOwnProperty.call(OBJ, j)) continue;
-                try {
-                    // ES5 way : callback.call(thisp, this[i], i, this);
-                    CB.call(OBJ, OBJ[j], j, OBJ);
-                } catch (x) {
-                    dbj.konsole.error("dbj.each() : callback failed :" + x.message);
-                }
-            }
-        }
-
-        dbj.date = { diff: function(date1, date2) {
-            ///<summary>
-            ///timespan of the difference of first date and second date
-            ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
-            ///</summary>
-            ///<returns type="object" />
-            var diff = new Date();
-            diff.setTime(Math.abs(date1.getTime() - date2.getTime()));
-            var timediff = diff.getTime();
-            var weeks = Math.floor(timediff / (1000 * 60 * 60 * 24 * 7));
-            timediff -= weeks * (1000 * 60 * 60 * 24 * 7);
-            var days = Math.floor(timediff / (1000 * 60 * 60 * 24));
-            timediff -= days * (1000 * 60 * 60 * 24);
-            var hours = Math.floor(timediff / (1000 * 60 * 60));
-            timediff -= hours * (1000 * 60 * 60);
-            var mins = Math.floor(timediff / (1000 * 60));
-            timediff -= mins * (1000 * 60);
-            var secs = Math.floor(timediff / 1000);
-            timediff -= secs * 1000;
-            var years = parseInt(weeks / 52);
-            return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
-        }
-        }
-
-
-    })(this);
+})(this);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 (function (global) {
 dbj.f_sig = function ( f )
