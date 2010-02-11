@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 14 $$Date: 10/02/10 2:05 $
+/// $Revision: 15 $$Date: 11/02/10 16:22 $
 ///
 /// Dependencies : none
 (function(window, undefined) {
@@ -20,29 +20,30 @@
     /// The DBJ library namespace.
     /// </summary>
     var dbj = top.dbj = window.dbj = {
-        toString: function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 10/02/10 2:05 $"; },
-        version: "1." + "$Revision: 14 $".match(/\d+/),
-        empty: function() { },
+        "toString" : function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 11/02/10 16:22 $"; },
+        "version"  : "1." + "$Revision: 15 $".match(/\d+/),
+        "empty" : function() { },
         // feature checks , specific for DBJS 
-        ftr: {
-            isMSFT: local.isMSFT,
-            in_a_browser: local.in_a_browser,
-            string_indexing: local.string_indexing
+        "ftr" : {
+            "isMSFT" : local.isMSFT,
+            "in_a_browser" : local.in_a_browser,
+            "string_indexing" : local.string_indexing
         }, // ftr
-        browser: { support: { orphan_css: true} },
-        decode: function(H) {
+        "browser" : { "support" : { "orphan_css" : true} },
+        "decode" : function(H) {
             /* quick-and-not-so-dirty html decoder */
             if ("string" === typeof H && !!H)
                 return H.replace('<', "&lt;").replace('>', "&gt;").replace('&', "&amp;").replace('"', "&quot;").replace("'", "&quot;");
         },
-        uid: function(uid_) {
+        "uid" : function(uid_) {
             /* unique identifier generator, made of dbj.prefix and the timer id. */
             return this.prefix + (uid_ = setTimeout(function() { clearTimeout(uid_) }, 0));
         },
-        prefix: "dbj",
-        now: function() { /* In a getTime format */return +(new Date()); },
-        alert: local.in_a_browser ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.alert(m_); }, 1); } : function() { /* TBD */ },
-        konsole: {
+        "prefix": "dbj",
+        "now": function() { /* In a getTime format */return +(new Date()); },
+        "alert": local.in_a_browser ? function(m_) { var tid = window.setTimeout(function() { window.clearTimeout(tid); window.alert(""+m_); }, 1); }
+        : function(m_) { WScript.Echo(""+m_); },
+        "konsole": {
             cons: (local.in_a_browser) && window.console ? window.console : { log: dbj.alert, warn: dbj.alert, error: dbj.alert, group: dbj.empty, groupEnd: dbj.empty },
             bg: function(m_) { this.cons.group(m_ || "DBJ"); return this; },
             eg: function() { this.cons.groupEnd(); return this; },
@@ -52,7 +53,7 @@
             terror: function(m_) { this.error(m_); throw "DBJS*Lib ERROR! " + m_; return this; },
             not_implemented: function() { this.terror(" not implemented yet"); }
         },
-        create: function(o) {
+        "create": function(o) {
             ///<summary>
             /// inspired by: http://javascript.crockford.com/prototypal.html
             /// This 'works' for all cases.
@@ -63,8 +64,8 @@
             function F() { }; F.prototype = o || {};
             return new F();
         },
-        json: {},
-        xml: {
+        "json": {},
+        "xml": {
             /// <summary>
             /// cross browser xml doc creation 
             /// </summary>
@@ -73,7 +74,7 @@
             :
                 function() { return new ActiveXObject("MSXML2.DOMDocument"); }
         },
-        cond: function(v) {
+        "cond" : function(v) {
             ///<summary>
             /// in javascript switch statement can not act as an rvalue
             /// so one can use the following dbj.cond() :
@@ -168,7 +169,7 @@ function json_parse(data) {
             if (typeof Array.prototype.forEach !== "function ")
                 Array.prototype.forEach = function(callback) {
                     for (var L = this.length >>> 0, j = 0; j < L; j++)
-                     callback.call(this, this[j], j, this);
+                        callback.call(this, this[j], j, this);
                 }
 
             // ES5 way : callback.call(thisp, this[i], i, this);
@@ -211,7 +212,7 @@ function json_parse(data) {
             if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
             if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
             for (var j in OBJ) {
-                if (!Object.prototype.call.hasOwnProperty(OBJ,j)) continue;
+                if (!Object.prototype.hasOwnProperty.call(OBJ, j)) continue;
                 try {
                     // ES5 way : callback.call(thisp, this[i], i, this);
                     CB.call(OBJ, OBJ[j], j, OBJ);
@@ -246,7 +247,7 @@ function json_parse(data) {
         }
 
 
-    })(window);
+    })(this);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 (function (global) {
 dbj.f_sig = function ( f )
