@@ -211,7 +211,7 @@ function json_parse(data) {
             if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
             if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
             for (var j in OBJ) {
-                if ("function" === typeof OBJ.hasOwnProperty && !OBJ.hasOwnProperty(j)) continue;
+                if (!Object.prototype.call.hasOwnProperty(OBJ,j)) continue;
                 try {
                     // ES5 way : callback.call(thisp, this[i], i, this);
                     CB.call(OBJ, OBJ[j], j, OBJ);
