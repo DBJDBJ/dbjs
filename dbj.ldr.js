@@ -36,31 +36,35 @@ this says that first file loaded OK, but second did not
         global.console.log([].join.call(arguments, ''));
     };
 
-    var dbj = global.dbj || (global.dbj = {});
-    STR_APPLY = "apply",
-	            STR_ASYNC = "async",
-	            STR_CACHE = "cache",
-	            STR_CALL = "call",
-	            STR_CHAIN = "chain",
-	            STR_CHARSET = "charset",
-	            STR_CREATE_ELEMENT = "createElement",
-	            STR_GET_ELEMENTS_BY_TAG_NAME = "getElementsByTagName",
-	            STR_HREF = "href",
-	            STR_LENGTH = "length",
-	            STR_ON_LOAD = "onload",
-	            STR_ON_READY_STATE_CHANGE = "onreadystatechange",
-	            STR_PLUS = "+",
-	            STR_PUSH = "push",
-	            STR_READY_STATE = "readyState",
-	            STR_URL = "url",
-	            STR_SCRIPT = "script",
-	            STR_TYPE = "type",
-	            loadedCompleteRegExp = /loaded|complete/,
-	            slice = [].slice,
-	            head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
+    var dbj = global.dbj || (global.dbj = {}),
+        STR_JQUERY_URL = "http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js",
+        STR_APPLY = "apply",
+        STR_ASYNC = "async",
+        STR_CACHE = "cache",
+        STR_CALL = "call",
+        STR_CHAIN = "chain",
+        STR_CHARSET = "charset",
+        STR_CREATE_ELEMENT = "createElement",
+        STR_GET_ELEMENTS_BY_TAG_NAME = "getElementsByTagName",
+        STR_HREF = "href",
+        STR_LENGTH = "length",
+        STR_ON_LOAD = "onload",
+        STR_ON_READY_STATE_CHANGE = "onreadystatechange",
+        STR_PLUS = "+",
+        STR_PUSH = "push",
+        STR_READY_STATE = "readyState",
+        STR_URL = "url",
+        STR_SCRIPT = "script",
+        STR_TYPE = "type",
+        STR_CFG_ATT = "_CFG_", STR_PTH_ATT = "_PATH_",
+        STR_CFG_READY = "_ONREADY_",
+        STR_LOADED_SIGNAL = "LOADED",
+        loadedCompleteRegExp = /loaded|complete/,
+        slice = [].slice,
+        head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
 
     // Defer execution just enough for all browsers (especially Opera!)
-    function later(func, self) {
+    function delayed_call(func, self) {
         var tid = setTimeout(function() {
             clearTimeout(tid); delete tid;
             func[STR_APPLY](self || global, slice[STR_CALL](arguments, 2));
@@ -97,7 +101,7 @@ this says that first file loaded OK, but second did not
 
                 if ("function" === typeof callback) {
                     if (global.opera)
-                        later(callback);
+                        delayed_call(callback);
                     else
                         callback();
                 }
@@ -109,22 +113,8 @@ this says that first file loaded OK, but second did not
     };
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    var cfg_att = "_CFG_", pth_att = "_PATH_", loaded_signal = "LOADED",
-    loader = function(global, $, LOG_METHOD, callback, undefined) {
-        $cfg = $("script[" + cfg_att + "][src]");
-        if ($cfg.length < 1) {
-            throw new Error(0xFF, "At least one script element must have valid both src and " + cfg_att + " attributes");
-        }
-        var CFG_FILE = $cfg.attr(cfg_att);
-        if (undefined === typeof CFG_FILE)
-            throw new Error(0xFF, cfg_att + " attribute is not defined?");
-        var CFG_PATH = $cfg.attr(pth_att);
-        if (CFG_PATH === undefined) {
-            // make path to be the same as script src attribute path component
-            var path = $cfg.attr('src');
-            CFG_PATH = path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./";
-        }
-        var cfg_json = {};
+
+    var loader = function(jQuery, CFG_PATH, CFG_FILE, callback, undefined) {
         jQuery.ajaxSetup({ async: false }); // CRUCIAL!
         $.getJSON(
         CFG_PATH + CFG_FILE,
@@ -133,42 +123,58 @@ this says that first file loaded OK, but second did not
             // stat will be one of the following values: 
             // "timeout","error","notmodified","success","parsererror"
             // this; is the options for this ajax request
-            cfg_json = data;
-            for (var js in cfg_json) {
-                if (js === loaded_signal) {
-                    callback();
-                    LOG_METHOD("DONE, status: " + stat);
-                } else {
-                    if (global.dbj_loader_cache[CFG_PATH + js]) continue;
-                    $.getScript(CFG_PATH + js, function(data, stat) {
-                        // save the status for this file
-                        cfg_json[js] = stat;
-                        global.dbj_loader_cache[CFG_PATH + js] = true;
-                        LOG_METHOD("Loaded:" + CFG_PATH + js + " :status: " + stat);
-                    });
-                }
+            for (var js in data) {
+                if (global.dbj_loader_cache[CFG_PATH + js]) continue;
+                $.getScript(CFG_PATH + js, function(data, stat) {
+                    // save the status for this file
+                    global.dbj_loader_cache[CFG_PATH + js] = stat;
+                    log_("Loaded:", CFG_PATH, js, " :status: ", stat);
+                });
             }
+            callback();
+            log_("DONE, status: ", stat);
         });
     };
 
     try {
-        dbj.loadScript({ "url": "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" },
+        dbj.loadScript({ "url": STR_JQUERY_URL },
         function() {
             //
-            $(document.body).error(function(msg, url, line) {
-                log_("DBJ*Loader Error: ", msg, "url: " + url, line);
-                return false;
+            jQuery(document).error(function(msg, url, line) {
+                log_("DBJ*Loader Error: ", msg, "url: " + url, line); return false;
+            });
+            jQuery(document).ajaxError(function(event, xhr, settings, thrownError) {
+                log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : "")); return false;
             });
 
-            $(document.body).ajaxError(function(event, xhr, settings, thrownError) {
-                log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
-                return false;
+            var $cfg = jQuery("script[" + STR_CFG_ATT + "][src]");
+            if ($cfg.length < 1) {
+                throw new Error(0xFF, "At least one script element must have valid both src and " + STR_CFG_ATT + " attributes");
+            }
+
+
+            $cfg.each(function() {
+                var $this = jQuery(this),
+                CFG_FILE = $this.attr(STR_CFG_ATT);
+                if (undefined === typeof CFG_FILE)
+                    throw new Error(0xFF, STR_CFG_ATT + " attribute is not defined?");
+                var CFG_PATH = $this.attr(STR_PTH_ATT); // try to use path attribute from the script element
+                if (CFG_PATH === undefined) {
+                    // make path to be the same as script src attribute path component
+                    var path = $this.attr('src');
+                    CFG_PATH = path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./";
+                }
+                var ready_handler = new Function( "return " + ($this.attr(STR_CFG_READY) || " log_('no ready handler defined')" )) ;
+
+                loader(jQuery, CFG_PATH, CFG_FILE, ready_handler );
+
             });
-            loader(global, jQuery, log_, dbj.loaded || function() { });
         });
     } catch (x) {
         log_("ERRROR:\n" + x.message);
+        document.writeln(x + "\n\n" + x.message + "\n\nDBJ*Loader has failed, there is no point of going further");
     }
+
 
 })(window || {});
     ////////////////////////////////////////////////////////////////////////////////////////
