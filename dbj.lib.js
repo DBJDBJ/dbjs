@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 18 $$Date: 12/02/10 14:40 $
+/// $Revision: 19 $$Date: 12/02/10 18:12 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
@@ -35,8 +35,8 @@
     /// The DBJ library namespace.
     var dbj = global.dbj = {
         "konsole": local.konsole,
-        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 12/02/10 14:40 $"; },
-        "version": "1." + "$Revision: 18 $".match(/\d+/),
+        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 12/02/10 18:12 $"; },
+        "version": "1." + "$Revision: 19 $".match(/\d+/),
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
@@ -107,7 +107,7 @@
         return undefined on any object that is not "object" or "function"
         also ignore the possible prototype chain
         */
-        "isEmpty" : function(object) {
+        "isEmpty": function(object) {
             if (typeof object !== 'object' && typeof object !== 'function') return;
             for (var name in object) {
                 if (Object.prototype.hasOwnProperty.call(object, name)) {
@@ -116,7 +116,7 @@
             }
             return true;
         },
-    "isNative" : (function() {
+        "isNative": (function() {
             var function_signature = function(f) {
                 // signature of a method through string decomposition
                 // returns: [ <method name> , <method body with '~' instead of name>]
@@ -124,17 +124,17 @@
                 var name = (f + "").match(/\w+/g)[1]; // name
                 return [name, (f + "").replace(name, "~")]; // signature
             }, native_signature = function_signature(Function);
-        return function(f) {
-        if (!local.isMSFT && "function" !== typeof f) return; // undefined on bad argument
+            return function(f) {
+                if (!local.isMSFT && "function" !== typeof f) return; // undefined on bad argument
                 // we can do this test only for non-msft hosts since in an IE window.alert() is object
-            try {
-                var sig = function_signature(f); // make name,signature pair
-                return sig[1] === native_signature[1]; // compare the signatures
-            } catch (x) {
-                return false;
+                try {
+                    var sig = function_signature(f); // make name,signature pair
+                    return sig[1] === native_signature[1]; // compare the signatures
+                } catch (x) {
+                    return false;
+                }
             }
-        }
-    })()
+        })()
 
     }; // eof dbj {}
 
@@ -234,6 +234,7 @@ function json_parse(data) {
 
 
     dbj.each = function(OBJ, CB) {
+
         ///<summary>
         /// iterate over an object and call a callback: CB( prop_name , prop_value )
         /// where CB this will be the OBJ, so that: this[prop_name] === prope_value
@@ -245,8 +246,8 @@ function json_parse(data) {
         /// before this lib is declared or, perhaps, even periodicaly
         /// OBJ must be object, not an array !
         ///</summary>
-        if ("Function" !== dbj.roleof(CB)) dbj.konsole.terror("bad callback argument for dbj.each()");
-        if ("Object" !== dbj.roleof(OBJ)) dbj.konsole.terror("bad object argument for dbj.each()");
+        if ("Function" !== dbj.roleof(CB)) { dbj.konsole.error("bad callback argument for dbj.each()"); return false; }
+        if ("Object" !== dbj.roleof(OBJ)) { dbj.konsole.error("bad object argument for dbj.each()"); return false; }
         for (var j in OBJ) {
             if (!Object.prototype.hasOwnProperty.call(OBJ, j)) continue;
             try {
@@ -254,11 +255,13 @@ function json_parse(data) {
                 CB.call(OBJ, OBJ[j], j, OBJ);
             } catch (x) {
                 dbj.konsole.error("dbj.each() : callback failed :" + x.message);
+                return false;
             }
         }
+        return true;
     }
 
-    dbj["date"] = { "diff" : function(date1, date2) {
+    dbj["date"] = { "diff": function(date1, date2) {
         ///<summary>
         ///timespan of the difference of first date and second date
         ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
