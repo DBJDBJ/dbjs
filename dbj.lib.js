@@ -688,7 +688,7 @@ for (var j in dbj.role.names) {
              four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
         };
 
-    if (dbj.ftr.in_a_browser) {
+    if (! dbj.ftr.in_a_browser) {
         var x_ = null;
         dbj.GUID = function(empty_) {
         //   This will work outside of browsers only
