@@ -20,20 +20,24 @@ this says that first file loaded OK, but second did not
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 5 $$Date: 10/02/10 12:09 $
+/// $Revision: 7 $$Date: 12/02/10 14:40 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
-    (function(undefined) {
+(function(global, undefined) {
 
-        // we do this log-method-quickie here so that we do not depend on some library
-        var log_ = (!top.window.console || !top.window.console.log) ? function() {
-            document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
-        } : function() {
-            top.window.console.log([].join.call(arguments, ''));
-        };
+    if (global.dbj_loader_cache === undefined) {
+        global.dbj_loader_cache = {};
+    }
 
-        var dbj = window.dbj || (window.dbj = {});
-        STR_APPLY = "apply",
+    // we do this log-method-quickie here so that we do not depend on some library
+    var log_ = (!global.console || !global.console.log) ? function() {
+        document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
+    } : function() {
+        global.console.log([].join.call(arguments, ''));
+    };
+
+    var dbj = global.dbj || (global.dbj = {});
+    STR_APPLY = "apply",
 	            STR_ASYNC = "async",
 	            STR_CACHE = "cache",
 	            STR_CALL = "call",
@@ -55,90 +59,58 @@ this says that first file loaded OK, but second did not
 	            slice = [].slice,
 	            head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
 
-        // Defer execution just enough for all browsers (especially Opera!)
-        function later(func, self) {
-            var tid = setTimeout(function() {
-                clearTimeout(tid); delete tid;
-                func[STR_APPLY](self || window, slice[STR_CALL](arguments, 2));
-            }, 0);
+    // Defer execution just enough for all browsers (especially Opera!)
+    function later(func, self) {
+        var tid = setTimeout(function() {
+            clearTimeout(tid); delete tid;
+            func[STR_APPLY](self || global, slice[STR_CALL](arguments, 2));
+        }, 0);
+    }
+
+    dbj.loadScript = function(options, callback) {
+
+        if (global.dbj_loader_cache[options[STR_URL]]) return;
+
+        var script = document[STR_CREATE_ELEMENT](STR_SCRIPT), done = false;
+
+        script[STR_ASYNC] = STR_ASYNC;
+        script[STR_TYPE] = "text/javascript";
+
+        if (options[STR_CHARSET]) {
+            script[STR_CHARSET] = options[STR_CHARSET];
         }
 
-        dbj.loadScript = function(options, callback) {
+        script.src = options[STR_URL];
 
-            var script = document[STR_CREATE_ELEMENT](STR_SCRIPT), done = false;
+        // Attach handlers for all browsers
+        script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = function() {
 
-            script[STR_ASYNC] = STR_ASYNC;
-            script[STR_TYPE] = "text/javascript";
+            if (!done && (!this.readyState || this.readyState == "loaded" || this.readyState == "complete")) {
+                done = true;
+                // Handle memory leak in IE
+                script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = null;
 
-            if (options[STR_CHARSET]) {
-                script[STR_CHARSET] = options[STR_CHARSET];
-            }
+                global.dbj_loader_cache[this.src] = true;
+                log_(script.src, " Loaded");
 
-            script.src = options[STR_URL];
+                head.removeChild(script);
 
-            // Attach handlers for all browsers
-            script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = function() {
-
-                if (!done && (!this.readyState || this.readyState == "loaded" || this.readyState == "complete")) {
-                    done = true;
-                    // Handle memory leak in IE
-                    script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = null;
-
-                    log_(script.src, " Loaded");
-
-                    head.removeChild(script);
-
-                    if ("function" === typeof callback) {
-                        if (window.opera)
-                            later(callback);
-                        else
-                            callback();
-                    }
+                if ("function" === typeof callback) {
+                    if (global.opera)
+                        later(callback);
+                    else
+                        callback();
                 }
-            };
-            // Use insertBefore instead of appendChild  to circumvent an IE6 bug.
-            // This arises when a base node is used (jQuery #2709 and #4378).
-            head.insertBefore(script, head.firstChild);
-        };
-
-        dbj.loadStyleSheet = function(options, callback) {
-
-            var link = document[STR_CREATE_ELEMENT]("link"),
-			title = options.title || "";
-
-            link.rel = "stylesheet";
-            link.type = "text/css";
-            link.media = options.media || "screen";
-            link[STR_HREF] = options[STR_URL];
-
-            if (options[STR_CHARSET]) {
-                link[STR_CHARSET] = options[STR_CHARSET];
             }
-
-            // Attach handlers for all browsers
-            link[STR_ON_LOAD] = link[STR_ON_READY_STATE_CHANGE] = function() {
-
-                if (!(readyState = link[STR_READY_STATE]) || loadedCompleteRegExp.test(readyState)) {
-
-                    // Handle memory leak in IE
-                    link[STR_ON_LOAD] = link[STR_ON_READY_STATE_CHANGE] = null;
-
-                    log_(link.href, " Loaded");
-
-                    if ("function" === typeof callback) {
-                        if (window.opera)
-                            later(callback);
-                        else
-                            callback();
-                    }
-                }
-            };
-            // Add it to the doc
-            head.appendChild(link);
         };
+        // Use insertBefore instead of appendChild  to circumvent an IE6 bug.
+        // This arises when a base node is used (jQuery #2709 and #4378).
+        head.insertBefore(script, head.firstChild);
+    };
 
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     var cfg_att = "_CFG_", pth_att = "_PATH_", loaded_signal = "LOADED",
-    loader = function(window, $, LOG_METHOD, callback, undefined) {
+    loader = function(global, $, LOG_METHOD, callback, undefined) {
         $cfg = $("script[" + cfg_att + "][src]");
         if ($cfg.length < 1) {
             throw new Error(0xFF, "At least one script element must have valid both src and " + cfg_att + " attributes");
@@ -165,19 +137,22 @@ this says that first file loaded OK, but second did not
             for (var js in cfg_json) {
                 if (js === loaded_signal) {
                     callback();
-                        LOG_METHOD("DONE, status: " + stat );
-                } else
+                    LOG_METHOD("DONE, status: " + stat);
+                } else {
+                    if (global.dbj_loader_cache[CFG_PATH + js]) continue;
                     $.getScript(CFG_PATH + js, function(data, stat) {
                         // save the status for this file
                         cfg_json[js] = stat;
-                        LOG_METHOD("Loaded:" + CFG_PATH + js + " :status: " + stat );
+                        global.dbj_loader_cache[CFG_PATH + js] = true;
+                        LOG_METHOD("Loaded:" + CFG_PATH + js + " :status: " + stat);
                     });
+                }
             }
         });
     };
 
-        try {
-            dbj.loadScript({ "url": "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" },
+    try {
+        dbj.loadScript({ "url": "http://ajax.googleapis.com/ajax/libs/jquery/1.3/jquery.min.js" },
         function() {
             //
             $(document.body).error(function(msg, url, line) {
@@ -189,10 +164,11 @@ this says that first file loaded OK, but second did not
                 log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : ""));
                 return false;
             });
-            loader(window, jQuery, log_, dbj.loaded || function() { });
+            loader(global, jQuery, log_, dbj.loaded || function() { });
         });
-        } catch (x) {
-            log_("ERRROR:\n" + x.message);
-        }
+    } catch (x) {
+        log_("ERRROR:\n" + x.message);
+    }
 
-    })();
+})(window || {});
+    ////////////////////////////////////////////////////////////////////////////////////////

@@ -6,14 +6,14 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 17 $$Date: 11/02/10 17:40 $
+/// $Revision: 18 $$Date: 12/02/10 14:40 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
     var local = {
-        "isMSFT" : (/*@cc_on!@*/false),
-        "in_a_browser" : "undefined" === typeof WScript,
-        "string_indexing" : "ABC"[0] === "A",
+        "isMSFT": (/*@cc_on!@*/false),
+        "in_a_browser": "undefined" === typeof WScript,
+        "string_indexing": "ABC"[0] === "A",
         "alert_": (function(browser_host) {
             return browser_host ? function(m_) { var tid = global.setTimeout(function() { global.clearTimeout(tid); global.alert("" + m_); }, 1); }
         : function(m_) { WScript.Echo("" + m_); }
@@ -34,9 +34,9 @@
     }; // local
     /// The DBJ library namespace.
     var dbj = global.dbj = {
-        "konsole" : local.konsole ,
-        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 11/02/10 17:40 $"; },
-        "version": "1." + "$Revision: 17 $".match(/\d+/),
+        "konsole": local.konsole,
+        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 12/02/10 14:40 $"; },
+        "version": "1." + "$Revision: 18 $".match(/\d+/),
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
@@ -102,7 +102,40 @@
             }
             return (!arguments[j - 2]) ? undefined : arguments[j - 2];
         },
-        cond_condition: function(a, b) { return a === b; }
+        "cond_condition": function(a, b) { return a === b; },
+        /*
+        return undefined on any object that is not "object" or "function"
+        also ignore the possible prototype chain
+        */
+        "isEmpty" : function(object) {
+            if (typeof object !== 'object' && typeof object !== 'function') return;
+            for (var name in object) {
+                if (Object.prototype.hasOwnProperty.call(object, name)) {
+                    return false;
+                }
+            }
+            return true;
+        },
+    "isNative" : (function() {
+            var function_signature = function(f) {
+                // signature of a method through string decomposition
+                // returns: [ <method name> , <method body with '~' instead of name>]
+                // DBJ.ORG 2009-2010
+                var name = (f + "").match(/\w+/g)[1]; // name
+                return [name, (f + "").replace(name, "~")]; // signature
+            }, native_signature = function_signature(Function);
+        return function(f) {
+        if (!local.isMSFT && "function" !== typeof f) return; // undefined on bad argument
+                // we can do this test only for non-msft hosts since in an IE window.alert() is object
+            try {
+                var sig = function_signature(f); // make name,signature pair
+                return sig[1] === native_signature[1]; // compare the signatures
+            } catch (x) {
+                return false;
+            }
+        }
+    })()
+
     }; // eof dbj {}
 
     //-----------------------------------------------------------------------------------------------------
@@ -225,7 +258,7 @@ function json_parse(data) {
         }
     }
 
-    dbj.date = { diff: function(date1, date2) {
+    dbj["date"] = { "diff" : function(date1, date2) {
         ///<summary>
         ///timespan of the difference of first date and second date
         ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
@@ -252,25 +285,7 @@ function json_parse(data) {
 
 })(this);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-(function (global) {
-dbj.f_sig = function ( f )
-{
-    // signature of a method through string decomposition
-    // returns: [ <method name> , <method body with '~' instead of name>]
-    // DBJ.ORG 2009
-    var name = (f + "").match(/\w+/g)[1]; // name
- return [ name ,(f+ "").replace( name, "~")]; // signature
-}
-var native_signature = dbj.f_sig( Function )
-dbj.isNative = function ( f ) 
-{
- try {
-    var sig = dbj.f_sig(f) ; // make name,signature pair
-        return sig[1] === native_signature[1] ; // compare the signatures
- } catch(x) {
-        return false ;
- }
-}
+(function(global) {
 })(window);
 
 (function(tos) {
