@@ -6,11 +6,17 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 19 $$Date: 12/02/10 18:12 $
+/// $Revision: 20 $$Date: 12/02/10 18:58 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
-    var local = {
+var local = {
+        "delay" : function (func, self, time_out) {
+        var tid = top.setTimeout(function() {
+            top.clearTimeout(tid); delete tid;
+                func.apply(self || global, Array.prototype.slice.call(arguments, 2));
+            }, time_out || 0);
+        },
         "isMSFT": (/*@cc_on!@*/false),
         "in_a_browser": "undefined" === typeof WScript,
         "string_indexing": "ABC"[0] === "A",
@@ -35,8 +41,8 @@
     /// The DBJ library namespace.
     var dbj = global.dbj = {
         "konsole": local.konsole,
-        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 12/02/10 18:12 $"; },
-        "version": "1." + "$Revision: 19 $".match(/\d+/),
+        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 12/02/10 18:58 $"; },
+        "version": "1." + "$Revision: 20 $".match(/\d+/),
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
@@ -45,10 +51,26 @@
             "string_indexing": local.string_indexing
         }, // ftr
         "browser": { "support": { "orphan_css": true} },
-        "decode": function(H) {
-            /* quick-and-not-so-dirty html decoder */
-            if ("string" === typeof H && !!H)
-                return H.replace('<', "&lt;").replace('>', "&gt;").replace('&', "&amp;").replace('"', "&quot;").replace("'", "&quot;");
+        "decode": function(s,en) {
+// Encodes the basic 4 characters used to malform HTML in XSS hacks
+		if("String" === dbj.roleof(s) && s.length > 1){
+			en = en || true;
+			// do we convert to numerical or html entity?
+			if(en){
+				s = s.replace(/\'/g,"&#39;"); //no HTML equivalent as &apos is not cross browser supported
+				s = s.replace(/\"/g,"&quot;");
+				s = s.replace(/</g,"&lt;");
+				s = s.replace(/>/g,"&gt;");
+			}else{
+				s = s.replace(/\'/g,"&#39;"); //no HTML equivalent as &apos is not cross browser supported
+				s = s.replace(/\"/g,"&#34;");
+				s = s.replace(/</g,"&#60;");
+				s = s.replace(/>/g,"&#62;");
+			}
+			return s;
+		}else{
+			return "";
+		}
         },
         "uid": function(uid_) {
             /* unique identifier generator, made of dbj.prefix and the timer id. */
@@ -232,7 +254,6 @@ function json_parse(data) {
         return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
     }
 
-
     dbj.each = function(OBJ, CB) {
 
         ///<summary>
@@ -247,7 +268,7 @@ function json_parse(data) {
         /// OBJ must be object, not an array !
         ///</summary>
         if ("Function" !== dbj.roleof(CB)) { dbj.konsole.error("bad callback argument for dbj.each()"); return false; }
-        if ("Object" !== dbj.roleof(OBJ)) { dbj.konsole.error("bad object argument for dbj.each()"); return false; }
+        if ("Object" !== dbj.roleof(OBJ)) { dbj.konsole.error(dbj.roleof(OBJ) +", is bad type for dbj.each()"); return false; }
         for (var j in OBJ) {
             if (!Object.prototype.hasOwnProperty.call(OBJ, j)) continue;
             try {
