@@ -22,10 +22,13 @@
 <![endif]-->
 <link href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
-if ("object" !== typeof window.JSON) {crazyLoader('http://dbj.org/4/json2.js');}
-crazyLoader("http://github.com/jquery/qunit/raw/master/qunit/qunit.js");
+crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js",
+"http://github.com/jquery/qunit/raw/master/qunit/qunit.js",
+"dbj.lib.js" ,
+"dbj.es5.js" 
+);
+if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js'); }
 </script>
-<script src="dbj.ldr.js" type="text/javascript" _CFG_="dbj.lib.cfg" "_ONREADY_=TEST.onload" ></script>
 </head>
 <body>
 <h1 id="qunit-header">DBJS&trade;&nbsp;JavaScript Mechanisms</h1>
