@@ -20,7 +20,7 @@ this says that first file loaded OK, but second did not
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 7 $$Date: 12/02/10 14:40 $
+/// $Revision: 12 $$Date: 17/02/10 1:18 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function(global, undefined) {
@@ -29,15 +29,18 @@ this says that first file loaded OK, but second did not
         global.dbj_loader_cache = {};
     }
 
+    var join = function() { return [].join.call(arguments, ''); },
+
     // we do this log-method-quickie here so that we do not depend on some library
-    var log_ = (!global.console || !global.console.log) ? function() {
+    // if firebug or other window.console is not present
+    log_ = (!global.console || !global.console.log) ? function() {
         document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
     } : function() {
         global.console.log([].join.call(arguments, ''));
-    };
-
-    var dbj = global.dbj || (global.dbj = {}),
-        STR_JQUERY_URL = "http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js",
+    },
+    terror = function() { var s_ = [].join.call(arguments, ''); log_(s_); throw new Error(0xFFFF, "DBJ*Loader ERROR: " + s_); },
+        dbj = global.dbj || (global.dbj = {}),
+        STR_JQUERY_URL = "http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js",
         STR_APPLY = "apply",
         STR_ASYNC = "async",
         STR_CACHE = "cache",
@@ -64,11 +67,15 @@ this says that first file loaded OK, but second did not
         head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
 
     // Defer execution just enough for all browsers (especially Opera!)
-    function delayed_call(func, self) {
+    function delayed_call(func, self, time_out) {
         var tid = setTimeout(function() {
             clearTimeout(tid); delete tid;
-            func[STR_APPLY](self || global, slice[STR_CALL](arguments, 2));
-        }, 0);
+            try {
+                func[STR_APPLY](self || global, slice[STR_CALL](arguments, 2));
+            } catch (x) {
+                terror(" name: ", x, "", ", message: ", x.message);
+            }
+        }, time_out || 0);
     }
 
     dbj.loadScript = function(options, callback) {
@@ -99,12 +106,13 @@ this says that first file loaded OK, but second did not
 
                 head.removeChild(script);
 
-                if ("function" === typeof callback) {
-                    if (global.opera)
-                        delayed_call(callback);
-                    else
-                        callback();
-                }
+                if ("function" === typeof callback)
+                // {
+                //  if (global.opera)
+                    delayed_call(callback);
+                //else
+                //  callback();
+                //}
             }
         };
         // Use insertBefore instead of appendChild  to circumvent an IE6 bug.
@@ -131,50 +139,66 @@ this says that first file loaded OK, but second did not
                     log_("Loaded:", CFG_PATH, js, " :status: ", stat);
                 });
             }
-            callback();
             log_("DONE, status: ", stat);
+            if ("function" === typeof callback) {
+                log_("Will be calling onready handler function");
+                $(callback);
+            }
         });
     };
+    //
+    var on_jq_ready = function() {
+        jQuery(function($) {
+                //
+                jQuery(document.body).error(function(msg, url, line) {
+                    log_("DBJ*Loader XHR Error: ", msg, "url: ", url, line); return false;
+                });
+                jQuery(document.body).ajaxError(function(event, xhr, settings, thrownError) {
+                    log_("DBJ*Loader XHR Error requesting: ", settings.url, (thrownError ? ", message: " + thrownError.message : "")); return false;
+                });
 
-    try {
-        dbj.loadScript({ "url": STR_JQUERY_URL },
-        function() {
-            //
-            jQuery(document).error(function(msg, url, line) {
-                log_("DBJ*Loader Error: ", msg, "url: " + url, line); return false;
-            });
-            jQuery(document).ajaxError(function(event, xhr, settings, thrownError) {
-                log_("DBJ*Loader Ajax Error requesting: " + settings.url + (thrownError ? ", message: " + thrownError.message : "")); return false;
-            });
-
-            var $cfg = jQuery("script[" + STR_CFG_ATT + "][src]");
-            if ($cfg.length < 1) {
-                throw new Error(0xFF, "At least one script element must have valid both src and " + STR_CFG_ATT + " attributes");
-            }
-
-
-            $cfg.each(function() {
-                var $this = jQuery(this),
-                CFG_FILE = $this.attr(STR_CFG_ATT);
-                if (undefined === typeof CFG_FILE)
-                    throw new Error(0xFF, STR_CFG_ATT + " attribute is not defined?");
-                var CFG_PATH = $this.attr(STR_PTH_ATT); // try to use path attribute from the script element
-                if (CFG_PATH === undefined) {
-                    // make path to be the same as script src attribute path component
-                    var path = $this.attr('src');
-                    CFG_PATH = path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./";
+                var $cfg = jQuery("script[" + STR_CFG_ATT + "][src]");
+                if ($cfg.length < 1) {
+                    terror("At least one script element must have valid both src and ", STR_CFG_ATT, " attributes");
                 }
-                var ready_handler = new Function( "return " + ($this.attr(STR_CFG_READY) || " log_('no ready handler defined')" )) ;
 
-                loader(jQuery, CFG_PATH, CFG_FILE, ready_handler );
+                $cfg.each(function() {
+                try {
+                    var $this = jQuery(this),
+                        CFG_FILE = $this.attr(STR_CFG_ATT),
+                        CFG_PATH = $this.attr(STR_PTH_ATT), // try to use path attribute from the script element
+                        path = $this.attr('src');
+                    if (undefined === CFG_FILE)
+                        terror(STR_CFG_ATT + " attribute is not defined?");
+                    if (CFG_PATH === undefined) {
+                        // make path to be the same as script src attribute path component
+                        CFG_PATH = path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./";
+                    }
+                    var defualt_onready = new Function(join(" console.log('no ready handler defined for:", CFG_PATH, CFG_FILE, "')")),
+                        on_ready;
+                    try {
+                        on_ready = (new Function("return " + $this.attr(STR_CFG_READY)))();
 
-            });
+                        if ("function" !== typeof on_ready) {
+                            log_("User defined ready handler can not be used, because it is not a function");
+                            on_ready = defualt_onready;
+                        }
+                    } catch (x) {
+                        log_("ERROR while evaluating _ON_READY_ attribute. Default onready handler will be used.");
+                        on_ready = defualt_onready;
+                    }
+                        loader(jQuery, CFG_PATH, CFG_FILE, on_ready);
+                    } catch (x) {
+                        log_("ERRROR:\n" + x.message);
+                    }
+                });
         });
-    } catch (x) {
-        log_("ERRROR:\n" + x.message);
-        document.writeln(x + "\n\n" + x.message + "\n\nDBJ*Loader has failed, there is no point of going further");
+    };
+    //
+    top.dbj_was_here = false;
+    if (false === top.dbj_was_here) {
+        top.dbj_was_here = true;
+        dbj.loadScript({ "url": STR_JQUERY_URL }, on_jq_ready);
     }
-
-
-})(window || {});
+})(window);
     ////////////////////////////////////////////////////////////////////////////////////////
