@@ -17,7 +17,6 @@
     }
  </script>
 <![endif]-->
-<script src="dbj.ldr.js" type="text/javascript" _CFG_="dbj.lib.cfg" ></script>
 <style type="text/css" media="all" >
     a { display:block; margin:5mm; padding:5mm; border:2px solid; font:24px/1.1 verdana; width:30mm; height:30mm; }
 </style>
@@ -29,7 +28,7 @@
 </div>
 </body>
 <script type="text/javascript">
-    dbj.loaded = function() {
+    window.MAIN = function() {
         ////////////////////////////////////////////////////////////////////////////////////////////////////
         var livetip_style = "position: absolute;background-color: #cfc;padding: 4px;border: 2px solid #9c9;border-radius: 4px;-webkit-border-radius: 4px;  -moz-border-radius: 4px;";
         var $liveTip = $('<div id="livetip" style="' + livetip_style + '"></div>').hide().appendTo('body');
@@ -79,4 +78,5 @@
         ////////////////////////////////////////////////////////////////////////////////////////////////////
     };
 </script>
+<script src="dbj.ldr.js" type="text/javascript" _CFG_="dbj.lib.cfg" _ONREADY_="MAIN" ></script>
 </html>
