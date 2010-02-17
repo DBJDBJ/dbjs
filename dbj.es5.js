@@ -4,26 +4,135 @@
 /// $Revision: 1 $$Date: 10/02/10 2:05 $
 ///
 /// Dependencies : dbj.lib.js
-(function( window, dbj, undefined) {
-/*
-  The DBJ ES5 emulations
-*/
-//-------------------------------------------------------------------------------------
-// BEGIN : ES5 compatibility
-// This algorithms are the ones used in Firefox and SpiderMonkey.
-if ("function" !== Array.prototype.indexOf) {
-    Array.prototype.indexOf = function(elt /*, from*/) {
-        var len = this.length >>> 0, from = Number(arguments[1]) || 0;
-        from = (from < 0) ? Math.ceil(from) : Math.floor(from);
-        if (from < 0) from += len;
-
-        for (; from < len; from++) {
-            if (from in this && this[from] === elt)
-                return from;
+(function(window, dbj, undefined) {
+// http: //erik.eae.net/playground/arrayextras/arrayextras.js
+// Mozilla 1.8 has support for indexOf, lastIndexOf, forEach, filter, map, some, every
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:lastIndexOf
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(obj, fromIndex) {
+        if (fromIndex == null) {
+            fromIndex = 0;
+        } else if (fromIndex < 0) {
+            fromIndex = Math.max(0, this.length + fromIndex);
+        }
+        for (var i = fromIndex; i < this.length; i++) {
+            if (this[i] === obj)
+                return i;
         }
         return -1;
     };
 }
+
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:lastIndexOf
+if (!Array.prototype.lastIndexOf) {
+    Array.prototype.lastIndexOf = function(obj, fromIndex) {
+        if (fromIndex == null) {
+            fromIndex = this.length - 1;
+        } else if (fromIndex < 0) {
+            fromIndex = Math.max(0, this.length + fromIndex);
+        }
+        for (var i = fromIndex; i >= 0; i--) {
+            if (this[i] === obj)
+                return i;
+        }
+        return -1;
+    };
+}
+
+
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:forEach
+if (!Array.prototype.forEach) {
+    Array.prototype.forEach = function(f, obj) {
+        var l = this.length; // must be fixed during loop... see docs
+        for (var i = 0; i < l; i++) {
+            f.call(obj, this[i], i, this);
+        }
+    };
+}
+
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:filter
+if (!Array.prototype.filter) {
+    Array.prototype.filter = function(f, obj) {
+        var l = this.length; // must be fixed during loop... see docs
+        var res = [];
+        for (var i = 0; i < l; i++) {
+            if (f.call(obj, this[i], i, this)) {
+                res.push(this[i]);
+            }
+        }
+        return res;
+    };
+}
+
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:map
+if (!Array.prototype.map) {
+    Array.prototype.map = function(f, obj) {
+        var l = this.length; // must be fixed during loop... see docs
+        var res = [];
+        for (var i = 0; i < l; i++) {
+            res.push(f.call(obj, this[i], i, this));
+        }
+        return res;
+    };
+}
+
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:some
+if (!Array.prototype.some) {
+    Array.prototype.some = function(f, obj) {
+        var l = this.length; // must be fixed during loop... see docs
+        for (var i = 0; i < l; i++) {
+            if (f.call(obj, this[i], i, this)) {
+                return true;
+            }
+        }
+        return false;
+    };
+}
+
+// http://developer-test.mozilla.org/docs/Core_JavaScript_1.5_Reference:Objects:Array:every
+if (!Array.prototype.every) {
+    Array.prototype.every = function(f, obj) {
+        var l = this.length; // must be fixed during loop... see docs
+        for (var i = 0; i < l; i++) {
+            if (!f.call(obj, this[i], i, this)) {
+                return false;
+            }
+        }
+        return true;
+    };
+}
+
+Array.prototype.contains = function(obj) {
+    return this.indexOf(obj) != -1;
+};
+
+Array.prototype.copy = function(obj) {
+    return this.concat();
+};
+
+Array.prototype.insertAt = function(obj, i) {
+    this.splice(i, 0, obj);
+};
+
+Array.prototype.insertBefore = function(obj, obj2) {
+    var i = this.indexOf(obj2);
+    if (i == -1)
+        this.push(obj);
+    else
+        this.splice(i, 0, obj);
+};
+
+Array.prototype.removeAt = function(i) {
+    this.splice(i, 1);
+};
+
+Array.prototype.remove = function(obj) {
+    var i = this.indexOf(obj);
+    if (i != -1)
+        this.splice(i, 1);
+};
+
+//-------------------------------------------------------------------------------------
 /* 
 GENERICS : array generics can be applied to every object that has a length property
 But in case of host where string does not allow for indexing this is a bit tricky
@@ -45,25 +154,6 @@ if ("function" !== Array.indexOf) {
         }
     }
 }
-// This algorithm is exactly the one used in Firefox and SpiderMonkey.
-if ("function" !== Array.prototype.lastIndexOf) {
-    Array.prototype.lastIndexOf = function(elt /*, from*/) {
-        var len = this.length, from = Number(arguments[1]);
-        if (isNaN(from)) {
-            from = len - 1;
-        }
-        else {
-            from = (from < 0) ? Math.ceil(from) : Math.floor(from);
-            if (from < 0) from += len;
-            else if (from >= len) from = len - 1;
-        }
-
-        for (; from > -1; from--) {
-            if (from in this && this[from] === elt) return from;
-        }
-        return -1;
-    };
-}
 // Generic variant
 if ("function" !== Array.lastIndexOf) {
     if (dbj.ftr.string_indexing) {
@@ -79,19 +169,6 @@ if ("function" !== Array.lastIndexOf) {
         else
             return -1;
     }
-}
-// This algorithm is exactly the one used in Firefox and SpiderMonkey.
-if ("function" !== typeof Array.prototype.forEach) {
-    Array.prototype.forEach = function(fun /*, thisp*/) {
-        if (typeof fun != "function") dbj.konsole.terror("[].forEach : callback not a function");
-        var len = this.length >>> 0, thisp = arguments[1];
-        for (var i = 0, val; i < len; i++) {
-            if (i in this) {
-                val = this[i]; // in case fun mutates this  
-                fun.call(thisp, val, i, this);
-            }
-        }
-    };
 }
 // Generic variant
 if ("function" !== Array.forEach) {
@@ -109,21 +186,6 @@ if ("function" !== Array.forEach) {
 }
 
 //[].filter 
-// This algorithm is exactly the one used in Firefox and SpiderMonkey.
-if ("function" !== typeof Array.prototype.filter) {
-    Array.prototype.filter = function(fun /*, thisp*/) {
-        if (typeof fun != "function") dbj.konsole.terror("[].filter : callback not a function");
-        var len = this.length >>> 0, res = [], thisp = arguments[1];
-        for (var i = 0, val; i < len; i++) {
-            if (i in this) {
-                val = this[i]; // in case fun mutates this  
-                if (fun.call(thisp, val, i, this))
-                    res.push(val);
-            }
-        }
-        return res;
-    };
-}
 // Generic variant
 if ("function" !== Array.filter) {
     Array.filter = function(obj, fun) {
@@ -131,19 +193,7 @@ if ("function" !== Array.filter) {
         return Array.prototype.filter.call(obj, fun);
     }
 }
-// This algorithm is exactly the one used in Firefox and SpiderMonkey.
-if ("function" !== Array.prototype.every) {
-    Array.prototype.every = function(fun /*, thisp*/) {
-        if (typeof fun != "function") dbj.konsole.terror("[].every : callback is not a function");
-        var len = this.length >>> 0, thisp = arguments[1];
-        for (var i = 0; i < len; i++) {
-            if (i in this && !fun.call(thisp, this[i], i, this))
-                return false;
-        }
-        return true;
-    };
-}
-// Generic variant
+// every() Generic variant
 if ("function" !== Array.every) {
     Array.every = function(obj, fun) {
         if ("string" === typeof obj) obj = obj.split("");
@@ -151,37 +201,14 @@ if ("function" !== Array.every) {
     }
 }
 
-// This algorithm is exactly the one used in Firefox and SpiderMonkey.
-if ("function" !== Array.prototype.map) {
-    Array.prototype.map = function(fun /*, thisp*/) {
-        if (typeof fun != "function") dbj.konsole.terror("[].map : callback is not a function");
-        var len = this.length >>> 0, res = new Array(len), thisp = arguments[1];
-        for (var i = 0; i < len; i++) {
-            if (i in this)
-                res[i] = fun.call(thisp, this[i], i, this);
-        }
-        return res;
-    };
-}
-// Generic variant
+// map() Generic variant
 if ("function" !== Array.map) {
     Array.map = function(obj, fun) {
         if ("string" === typeof obj) obj = obj.split("");
         return Array.prototype.map.call(obj, fun);
     }
 }
-// This algorithm is exactly the one used in Firefox and SpiderMonkey.
-if ("function" !== Array.prototype.some) {
-    Array.prototype.some = function(fun /*, thisp*/) {
-        if (typeof fun != "function") dbj.konsole.terror("[].some : callback is not a function");
-        var i = 0, len = this.length >>> 0, thisp = arguments[1];
-        for (; i < len; i++) {
-            if (i in this && fun.call(thisp, this[i], i, this))
-                return true;
-        }
-        return false;
-    };
-}
+// some() 
 if ("function" !== Array.some) {
     Array.some = function(obj, fun) {
         if ("string" === typeof obj) obj = obj.split("");
@@ -246,5 +273,5 @@ var filtered = [12, 5, 8, 130, 44].filter(isBigEnough);
 // END : ES5 compatibility
 //-------------------------------------------------------------------------------------
 
-})(this, dbj );
+})(window, window.dbj );
 
