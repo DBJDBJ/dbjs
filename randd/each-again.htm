@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
+<meta charset=utf-8 />
+<title>DBJ*Each Research</title>
+<!--[if IE]>
+  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+<![endif]-->
+<style type="text/css" media="all">
+  html.body { height:100%; width:100% }
+  article, aside, figure, footer, header, hgroup,
+  menu, nav, section { display: block; }
+  #konsole { border: 1px solid; padding:2mm; width:99%; height: 99%; font:12px/1.3 verdana, monospace; }
+</style>
+</head>
+<body>
+  <p id="konsole"></p>
+</body>
+<script type="text/javascript">
+////////////////////////////////////////////////////////////////////////////////////////////
+var konsole = {
+  el : document.getElementById('konsole'),
+  log : function () {
+  var s = [].join.call(arguments, ""), tid = setTimeout(function() { konsole.el.innerText += s; }, 0);
+  }
+}
+    //
+            String.prototype.format = function() {
+                    var args = arguments;
+                    return this.replace(/\{(\d|\d\d)\}/g, function($0) {
+                        var idx = $0.match(/\d+/);
+                        return args[idx] ? args[idx] : $0;
+                    });
+                };
+
+////////////////////////////////////////////////////////////////////////////////////////////
+
+
+(function() {
+    //----------------------------------------------------------------------------------------------
+    function each(object, callback, args) {
+        var name, i = 0,
+        length = object.length,
+        isObj = length === undefined || "function" === typeof object;
+        //    if (args) {
+        if (isObj) {
+            for (name in object) {
+                if (callback.apply(object[name], args || [name, object[name]]) === false) {
+                    break;
+                }
+            }
+        } else {
+            for (; i < length; ) {
+                if (callback.apply(object[i++], args || [i - 1, object[i - 1]]) === false) {
+                    break;
+                }
+            }
+        }
+        return object;
+    }
+    //
+    function test(obj_siz, loop_siz ) {
+        var measure = function(fun) {
+        var t1 = new Date(), counter = loop_siz;
+        while (counter--) { fun(); }
+        return (new Date() - t1) + " ms ";
+    }
+    //
+    make_object = function(size) { var o = { "size": size }; while (size--) { o[size] = size; }; return o; }
+    //
+        var s = [], o = make_object(obj_siz), cb = function() { s.push(this + "," + [].join.call(arguments)); }, args = ["one", "two"];
+
+        return "dbj each: {1}, jQ each: {2}".format(o.size, measure(function() { each(o, cb, args) }), measure(function() { each(o, cb, args) }));
+    };
+    window.onload = function() {
+        var size = 1e3, looplen = 1e2, runs = 1e1 ;
+        konsole.log("Starting ", runs, " runs. With object size:", size, " , loop length: ", looplen , "\n\n");
+        var final = [], tid = top.setTimeout(function() {
+            top.clearTimeout(tid); tid = null;
+            for (var j = runs; j--; ) { final.push(test(size,looplen)); } konsole.log(final.join("\n"));
+        }, 1);
+    };
+    //----------------------------------------------------------------------------------------------
+})();
+</script>
+</html>
