@@ -8,42 +8,49 @@
   <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
 <![endif]-->
 <style type="text/css" media="all">
-  html.body { height:100%; width:100% }
+  html,body { height:100%; width:100%; font:small/1.5 verdana, monospace; }
   article, aside, figure, footer, header, hgroup,
   menu, nav, section { display: block; }
-  #konsole { border: 1px solid; padding:2mm; width:99%; height: 99%; font:12px/1.3 verdana, monospace; }
+  hr {height:3mm;}
+  label, input { min-width: 40mm; margin:2px; padding:2px; border:1px dashed #ccc; }
+  #konsole { border: 1px solid; padding:2mm; width:90%; height: 69%; overflow:auto; }
 </style>
 </head>
 <body>
-  <p id="konsole"></p>
+<form action="javascript:main('frm');" id="frm" >
+<fieldset title="testing parameters">
+<label >Input object size</label><input id="OBJECT_SIZE" value="10" />
+<br />
+<label >Loop length</label><input id="LOOP_LENGTH" value="10" />
+<br />
+<label >Number of runs</label><input id="NUMBER_OF_RUNS" value="10" />
+<br />
+</fieldset>
+<hr />
+<input type="submit" value="Start" />
+</form>
+<hr />
+ <p id="konsole"></p>
 </body>
 <script type="text/javascript">
-////////////////////////////////////////////////////////////////////////////////////////////
-var konsole = {
-  el : document.getElementById('konsole'),
-  log : function () {
-  var s = [].join.call(arguments, ""), tid = setTimeout(function() { konsole.el.innerText += s; }, 0);
-  }
-}
+    ////////////////////////////////////////////////////////////////////////////////////////////
+    var harvester = function(frm_id, defaults) {
+        var  $frm = jQuery("form#" + frm_id, document.object),
+    getval = function(id_) { return ($frm.find("input#"+id_).val() || defaults[id_]) - 0 ; };
+    
+    for ( name in defaults ) {
+         defaults[name] = getval(name) ;
+    }
+        return defaults ;
+};
+//
+function main ( ) {
+
     //
-            String.prototype.format = function() {
-                    var args = arguments;
-                    return this.replace(/\{(\d|\d\d)\}/g, function($0) {
-                        var idx = $0.match(/\d+/);
-                        return args[idx] ? args[idx] : $0;
-                    });
-                };
-
-////////////////////////////////////////////////////////////////////////////////////////////
-
-
-(function() {
-    //----------------------------------------------------------------------------------------------
     function each(object, callback, args) {
         var name, i = 0,
         length = object.length,
         isObj = length === undefined || "function" === typeof object;
-        //    if (args) {
         if (isObj) {
             for (name in object) {
                 if (callback.apply(object[name], args || [name, object[name]]) === false) {
@@ -59,29 +66,61 @@ var konsole = {
         }
         return object;
     }
-    //
-    function test(obj_siz, loop_siz ) {
+    //----------------------------------------------------------------------------------------------
+    var konsole = {
+        el: function() { return document.getElementById('konsole'); },
+        log: function() {
+            var s = "\r\n" + [].join.call(arguments, ""), tid = setTimeout(function() { konsole.el().innerText += s; }, 0);
+        }
+    }
+    , summa = (function() {
+        var obj_ = {},
+    sum_ = function(arr) { var l = arr.length, sum = 0; while (l--) { sum += arr[l]; }; return sum; },
+    avg_ = function(arr) { return sum_(arr) / arr.length; },
+    isArray = function(x) { return Object.prototype.toString.call(x) === "[object Array]"; };
+
+        return {
+            add: function(k, v) {
+                v = v - 0;
+                if (!isArray(obj_[k]))
+                    obj_[k] = [v];
+                else
+                    obj_[k].push(v);
+                return v;
+            },
+            sum: function(k) { return sum_(obj_[k] || []); },
+            avg: function(k) { return avg_(obj_[k]); },
+            all: function(k) { return obj_[k] || [] }
+        };
+    })();
+    //----------------------------------------------------------------------------------------------
+    function test(obj_siz, loop_siz) {
         var measure = function(fun) {
-        var t1 = new Date(), counter = loop_siz;
-        while (counter--) { fun(); }
-        return (new Date() - t1) + " ms ";
+            var t1 = new Date(), counter = loop_siz;
+            while (counter--) { fun(); }
+            return (new Date() - t1) - 0;
+        },
+        make_object = function(size) { var o = { "size": size }; while (size--) { o[size] = size; }; return o; },
+        s = [],
+        o = make_object(obj_siz),
+        cb = function() { s.push(this + "," + [].join.call(arguments)); },
+        args = ["one", "two"];
+
+        summa.add("dbj",  measure(function() { each(o, cb, args) }) );
+        summa.add("jq",   measure(function() { jQuery.each(o, cb, args) }) );
     }
     //
-    make_object = function(size) { var o = { "size": size }; while (size--) { o[size] = size; }; return o; }
-    //
-        var s = [], o = make_object(obj_siz), cb = function() { s.push(this + "," + [].join.call(arguments)); }, args = ["one", "two"];
+    var LOOP_LENGTH = "LOOP_LENGTH", OBJECT_SIZE = "OBJECT_SIZE", NUMBER_OF_RUNS = "NUMBER_OF_RUNS",
+    vals = harvester("frm", { OBJECT_SIZE: 1e1, LOOP_LENGTH: 1e1, NUMBER_OF_RUNS: 1e1 });
+    konsole.log("Starting ", vals[NUMBER_OF_RUNS], " runs. With object size:", vals[OBJECT_SIZE], " , loop length: ", vals[LOOP_LENGTH]);
+    var tid = setTimeout(function() {
+        clearTimeout(tid); tid = null;
+        for (var j = vals[NUMBER_OF_RUNS]; j--; ) { test(vals[OBJECT_SIZE], vals[LOOP_LENGTH]); }
+        konsole.log("dbj   , total:", summa.sum("dbj"), " ms,\t\taverage:", summa.avg("dbj"));
+        konsole.log("jQery , total:", summa.sum("jq"), " ms,\t\taverage:", summa.avg("jq"));
+    }, 1000);
 
-        return "dbj each: {1}, jQ each: {2}".format(o.size, measure(function() { each(o, cb, args) }), measure(function() { each(o, cb, args) }));
-    };
-    window.onload = function() {
-        var size = 1e3, looplen = 1e2, runs = 1e1 ;
-        konsole.log("Starting ", runs, " runs. With object size:", size, " , loop length: ", looplen , "\n\n");
-        var final = [], tid = top.setTimeout(function() {
-            top.clearTimeout(tid); tid = null;
-            for (var j = runs; j--; ) { final.push(test(size,looplen)); } konsole.log(final.join("\n"));
-        }, 1);
-    };
+}
     //----------------------------------------------------------------------------------------------
-})();
 </script>
 </html>
