@@ -20,7 +20,7 @@ this says that first file loaded OK, but second did not
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 12 $$Date: 17/02/10 1:18 $
+/// $Revision: 14 $$Date: 18/02/10 18:16 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function(global, undefined) {
@@ -31,13 +31,6 @@ this says that first file loaded OK, but second did not
 
     var join = function() { return [].join.call(arguments, ''); },
 
-    // we do this log-method-quickie here so that we do not depend on some library
-    // if firebug or other window.console is not present
-    log_ = (!console || !console.log) ? function() {
-        document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + [].join.call(arguments, '') + "</ul></li>").replace(/\n/g, "<br/>");
-    } : function() {
-        console.log([].join.call(arguments, ''));
-    },
     terror = function() { var s_ = [].join.call(arguments, ''); log_.call(window, s_); throw new Error(0xFFFF, "DBJ*Loader ERROR: " + s_); },
         dbj = dbj || (dbj = {}),
         STR_JQUERY_URL = "http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js",
@@ -62,6 +55,7 @@ this says that first file loaded OK, but second did not
         STR_CFG_ATT = "_CFG_", STR_PTH_ATT = "_PATH_",
         STR_CFG_READY = "_ONREADY_",
         STR_LOADED_SIGNAL = "LOADED",
+        STR_SPECIAL_CFG_ID = "dbj.lib.cfg",
         loadedCompleteRegExp = /loaded|complete/,
         slice = [].slice,
         head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
@@ -78,6 +72,21 @@ this says that first file loaded OK, but second did not
         }, time_out || 0);
     }
 
+    // we do this log-method-quickie here so that we do not depend on some library
+    // if firebug or other window.console is not present
+    var log_ = (!console || !console.log) ? function() {
+        delayed_call(function() {
+            var s_ = [].join.call(arguments, '');
+            document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + s_ + "</ul></li>").replace(/\n/g, "<br/>");
+        }, this, 1);
+    } : function() {
+        var s_ = [].join.call(arguments, '');
+        delayed_call(function() {
+            console.log(s_);
+        }, this, 1);
+    };
+
+
     // for the time being this crazzy nugget is winning ...
     var loadScript = function(options, callback) {
 
@@ -92,6 +101,10 @@ this says that first file loaded OK, but second did not
             script[STR_CHARSET] = options[STR_CHARSET];
         }
 
+        if (options["id"]) {
+            script["id"] = options["id"];
+        }
+
         script.src = options[STR_URL];
 
         // Attach handlers for all browsers
@@ -102,7 +115,7 @@ this says that first file loaded OK, but second did not
                 // Handle memory leak in IE
                 script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = null;
 
-                global.dbj_loader_cache[this.src] = true;
+                global.dbj_loader_cache[this.src] = this.id || true;
                 log_.call(global, script.src, " Loaded");
 
                 head.removeChild(script);
@@ -135,23 +148,21 @@ this says that first file loaded OK, but second did not
         $.getJSON(
         CFG_PATH + CFG_FILE,
         function(data, stat) {
-            // data will be a jsonObj, stat will be one of the following values:
-            // "timeout","error","notmodified","success","parsererror", this is the options for this ajax request
             var key = keys(data);
-            function inner_loader(j,key) {
+            function inner_loader(j, key) {
                 var js = key[j];
                 if (!js) return;
                 loadScript({ "url": CFG_PATH + js }, function() {
                     log_("Loaded:", CFG_PATH, js, " :status: ", stat);
-                    if (j === ( key.length -1 ) ) {
-                        log_("j: ", j, ", l: ", key.length-1, ", time to call the final callback");
+                    if (j === (key.length - 1)) {
+                        // log_("j: ", j, ", l: ", key.length - 1, ", time to call the final callback");
                         if ("function" === typeof callback) {
-                            log_("Now calling ONREADY function: ", callback+"");
+                            log_("Now calling ONREADY handler");
                             delayed_call(callback, window);
                             return;
                         }
                     } else {
-                        inner_loader(j+1, key );
+                        inner_loader(j + 1, key);
                     }
                 });
             }
@@ -177,22 +188,31 @@ this says that first file loaded OK, but second did not
                 var $this = jQuery(this),
                         CFG_FILE = $this.attr(STR_CFG_ATT),
                         CFG_PATH = $this.attr(STR_PTH_ATT), // try to use path attribute from the script element
-                        path = $this.attr('src');
+                        path = $this.attr('src'),
+                        CFG_ONREADY = $this.attr(STR_CFG_READY);
+
+                if (top.dbj_was_here[path]) {
+                    log_("Already done: ", path);
+                    return;
+                }
+                top.dbj_was_here[path] = true;
+
                 if (undefined === CFG_FILE)
                     terror.call(global, STR_CFG_ATT + " attribute is not defined?");
                 if (CFG_PATH === undefined) {
-                    // make path to be the same as script src attribute path component
+                    // if not user defined make path to be the same as script src attribute path component
                     CFG_PATH = path.match(/^.*\//) ? "" + path.replace(/\\/g, "/").match(/^.*\//) : "./";
                 }
-                var defualt_onready = new Function(join(" console.log('no ready handler defined for:", CFG_PATH, CFG_FILE, "')")),
+                var defualt_onready = new Function(join(" console.log('no ready handler found for:", CFG_PATH, CFG_FILE, "')")),
                         on_ready;
                 try {
-                    on_ready = (new Function("return " + $this.attr(STR_CFG_READY)))();
+                    on_ready = (new Function("return " + CFG_ONREADY))();
 
                     if ("function" !== typeof on_ready) {
                         log_.call(global, "User defined ready handler can not be used, because it is not a function");
                         on_ready = defualt_onready;
                     }
+                    log_("Function : ", CFG_ONREADY, "(), is found to be user defined onready handler");
                 } catch (x) {
                     log_.call(global, "ERROR while evaluating _ON_READY_ attribute. Default onready handler will be used.");
                     on_ready = defualt_onready;
@@ -204,10 +224,7 @@ this says that first file loaded OK, but second did not
         });
     };
     //
-    top.dbj_was_here = false;
-    if (false === top.dbj_was_here) {
-        top.dbj_was_here = true;
-        loadScript({ "url": STR_JQUERY_URL }, on_jq_ready);
-    }
+    top.dbj_was_here = [];
+    loadScript({ "url": STR_JQUERY_URL }, on_jq_ready);
 })(window);
     ////////////////////////////////////////////////////////////////////////////////////////
