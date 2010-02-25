@@ -1,7 +1,7 @@
 ﻿///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 4 $$Date: 25/02/10 1:06 $
+/// $Revision: 5 $$Date: 25/02/10 14:06 $
 ///
 /// Dependencies : dbj.lib.js
 /*
