@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 21 $$Date: 17/02/10 1:18 $
+/// $Revision: 22 $$Date: 25/02/10 14:06 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
@@ -49,8 +49,8 @@
     /// The DBJ library namespace.
     var dbj = global.dbj = {
         "konsole": local.konsole,
-        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 17/02/10 1:18 $"; },
-        "version": "1." + "$Revision: 21 $".match(/\d+/),
+        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 25/02/10 14:06 $"; },
+        "version": "1." + "$Revision: 22 $".match(/\d+/),
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
