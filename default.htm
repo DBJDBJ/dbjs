@@ -123,9 +123,9 @@ if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js');
     };
 </script>
 <script type="text/javascript">
-      var tests = {
-          "ES5 Compatibility": {  // begin module 
-              "Array":
+    var tests = {
+        "ES5 Compatibility": {  // begin module 
+            "Array":
                     [
                         [function() { return [1, 2, 3].indexOf(2) }, 1],
                         [function() { return [1, 2, 3].indexOf(9) }, -1],
@@ -138,7 +138,7 @@ if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js');
                         [function() { return [1, 2, 3].some(function(v, n, o) { return v > 2; }); }, true],
                         [function() { return [0, 1, 2, 3].reduce(function(a, b) { return a + b; }); }, 6]
                     ],
-              "Array Generics":
+            "Array Generics":
                     [
                         [function() { return Array.indexOf("123", "2") }, 1],
                         [function() { return Array.indexOf("123", "9") }, -1],
@@ -147,36 +147,36 @@ if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js');
                         [function() { var r; Array.forEach("123", function(v, n, o) { r = v; }); return r; }, "3"],
                         [function() { return Array.filter("123", function(v, n, o) { return v === "3"; }) + ""; }, "3"]
                     ]
-          },
-          "Services": {  // begin module "DBJS"
-              "JSON":
+        },
+        "Services": {  // begin module "DBJS"
+            "JSON":
                     [
                         [function() { return dbj.json.ok_string('{a:1}') }, false],
                         [function() { return dbj.json.nonstandard }, false],
                         [function() { return "object" === typeof dbj.json.parse('{ "a":1 }') }, true]
                     ],
-              "JavaScript":
+            "JavaScript":
                     [
                         [function() { var a = { p: 1 }, b = dbj.create(a); a.x = 2; return b.x === 2; }, true],
-                        [function() { return dbj.reveal([{ a: 1 }, { b: { c: 2}}], true ); }, "[ { a: 1 }, { b: { c: 2 } } ]"],
+                        [function() { return dbj.reveal([{ a: 1 }, { b: { c: 2}}], true); }, "[ { a: 1 }, { b: { c: 2 } } ]"],
                         [function() { return dbj.isFunction(window.alert) }, true],
                         [function() { return dbj.isNative(window.alert) }, true],
                         [function() { return dbj.isObject(window.alert) }, false]
                     ],
-              "HTML":
+            "HTML":
                     [
                        [function() { return dbj.xml.doc().load("<root />"); }, true],
                         [function() { return dbj.decode('<div id="a" rel=\'r&l\' >'); }, "&lt;div id=&quot;a&quot; rel=&#39;r&l&#39; &gt;"]
                     ]
-          }, // eof module "DBJS"
-          "Sync/Async calling": {
-              "1": [
+        }, // eof module "DBJS"
+        "Sync/Async calling": {
+            "1": [
                        [function() { var r = dbj.sync(function(a, b) { return a + b; }, 1, 2); return r }, 3],
                        [function() { dbj.async(function(a, b) { dbj.konsole.log(a + b); return a + b; }, 1, 2); return dbj.async.retval === undefined; }, true]
               ]
-          },
-          "Utilities": {
-              "1": [
+        },
+        "Utilities": {
+            "1": [
                        [function() { return typeof dbj.reveal(document.location); }, "string"],
                        [function() { return typeof dbj.GUID(); }, "string"],
                        [function() { return typeof dbj.uid(); }, "string"],
@@ -184,11 +184,11 @@ if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js');
                        [function() { return typeof dbj.now(); }, "number"],
                        [function() { return dbj.cond(2, 1, "blue", 2, "red", /*default is*/"green"); }, "red"]
                   ],
-              " forEach() for objects. NOT arrays.": [
-                       [function() { var r; dbj.each({ a: 1 }, function(v,n,o) { r = (o[n] === v ); }); return r }, true],
-                       [function() { return dbj.each([1, 2], function() { }); }, false]
+            " dbj.forEach().": [
+                       [function() { var r=[]; dbj.forEach({ a:1,b:2 }, function(v, n, o) { r.push(v); }); return ""+r }, "1,2"],
+                       [function() { var r=[]; dbj.forEach([1, 2], function(v, n, o) { r[n] = v; }); return ""+r }, "1,2"]
                   ],
-              " String ulitities ": [
+            " String ulitities ": [
                 [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
                 [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
                 [function() { return "ABCD".reverse(); }, "DCBA"],
@@ -206,7 +206,7 @@ if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js');
                 [function() { return "{99}".format("!"); }, "{99}"]
               ]
 
-          }
+        }
 }         // eof tests
   </script>
 </html>

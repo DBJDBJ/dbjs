@@ -10,18 +10,26 @@
 ///
 /// Dependencies : none
 (function(global, undefined) {
-var local = {
-        "delay" : function (func, self, time_out) {
-        var tid = top.setTimeout(function() {
-            top.clearTimeout(tid); delete tid;
-                func.apply(self || global, Array.prototype.slice.call(arguments, 2));
+    //
+    var TOS = Object.prototype.toString,
+    HOP = Object.prototype.hasOwnProperty,
+    SLC = Array.prototype.slice,
+    JON = Array.prototype.join,
+    STT = window.setTimeout,
+    CTT = window.clearTimeout;
+    //
+    var local = {
+        "delay": function(func, self, time_out) {
+            var tid = STT(function() {
+                CTT(tid); delete tid;
+                func.apply(self || global, SLC.call(arguments, 2));
             }, time_out || 0);
         },
         "isMSFT": (/*@cc_on!@*/false),
         "in_a_browser": "undefined" === typeof WScript,
         "string_indexing": "ABC"[0] === "A",
         "alert_": (function(browser_host) {
-            return browser_host ? function(m_) { var tid = global.setTimeout(function() { global.clearTimeout(tid); global.alert("" + m_); }, 1); }
+            return browser_host ? function(m_) { var tid = STT(function() { CTT(tid); global.alert("" + m_); }, 1); }
         : function(m_) { WScript.Echo("" + m_); }
         })("undefined" === typeof WScript),
         "konsole": {
@@ -51,26 +59,26 @@ var local = {
             "string_indexing": local.string_indexing
         }, // ftr
         "browser": { "support": { "orphan_css": true} },
-        "decode": function(s,en) {
-// Encodes the basic 4 characters used to malform HTML in XSS hacks
-		if("String" === dbj.roleof(s) && s.length > 1){
-			en = en || true;
-			// do we convert to numerical or html entity?
-			if(en){
-				s = s.replace(/\'/g,"&#39;"); //no HTML equivalent as &apos is not cross browser supported
-				s = s.replace(/\"/g,"&quot;");
-				s = s.replace(/</g,"&lt;");
-				s = s.replace(/>/g,"&gt;");
-			}else{
-				s = s.replace(/\'/g,"&#39;"); //no HTML equivalent as &apos is not cross browser supported
-				s = s.replace(/\"/g,"&#34;");
-				s = s.replace(/</g,"&#60;");
-				s = s.replace(/>/g,"&#62;");
-			}
-			return s;
-		}else{
-			return "";
-		}
+        "decode": function(s, en) {
+            // Encodes the basic 4 characters used to malform HTML in XSS hacks
+            if ("String" === dbj.roleof(s) && s.length > 1) {
+                en = en || true;
+                // do we convert to numerical or html entity?
+                if (en) {
+                    s = s.replace(/\'/g, "&#39;"); //no HTML equivalent as &apos is not cross browser supported
+                    s = s.replace(/\"/g, "&quot;");
+                    s = s.replace(/</g, "&lt;");
+                    s = s.replace(/>/g, "&gt;");
+                } else {
+                    s = s.replace(/\'/g, "&#39;"); //no HTML equivalent as &apos is not cross browser supported
+                    s = s.replace(/\"/g, "&#34;");
+                    s = s.replace(/</g, "&#60;");
+                    s = s.replace(/>/g, "&#62;");
+                }
+                return s;
+            } else {
+                return "";
+            }
         },
         "uid": function(uid_) {
             /* unique identifier generator, made of dbj.prefix and the timer id. */
@@ -89,7 +97,17 @@ var local = {
             function F() { }; F.prototype = o || {};
             return new F();
         },
-        "json": {},
+        "json": {
+            ok_string: (function() {
+                var rx0 = /^[\],:{}\s]*$/,
+                rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
+                rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
+                rx3 = /(?:^|:|,)(?:\s*\[)+/g;
+                return function(data) {
+                    return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
+                }
+            } ())
+        },
         "xml": {
             /// <summary>
             /// cross browser xml doc creation 
@@ -132,7 +150,7 @@ var local = {
         "isEmpty": function(object) {
             if (typeof object !== 'object' && typeof object !== 'function') return;
             for (var name in object) {
-                if (Object.prototype.hasOwnProperty.call(object, name)) {
+                if (HOP.call(object, name)) {
                     return false;
                 }
             }
@@ -176,112 +194,34 @@ var local = {
         /*
         IMPORTANT: FireFox has a problem with nested closures
         */
-        try {
-            var rx0 = /^[\],:{}\s]*$/,
-                rx1 = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,
-                rx2 = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
-                rx3 = /(?:^|:|,)(?:\s*\[)+/g
-                , x;
-            dbj.json.ok_string = function(data) {
-                return rx0.test(data.replace(rx1, "@").replace(rx2, "]").replace(rx3, ""));
-            }
 
+        if ("object" === typeof window.JSON)
+            try {
             JSON.parse("{ a : 1 }");
             dbj.json.nonstandard = true;
         } catch (x) {
             dbj.json.nonstandard = false;
         }
-    }; // if in_a_browser
+
+        // non-standard JSON stops here
+        dbj.json.parse =
+     (global.JSON && ("function" === typeof global.JSON.parse)) ?
+           dbj.json.nonstandard ?
+             function json_parse(data) {
+                 if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
+                 return global.JSON.parse(data);
+             }
+          : // else 
+             function json_parse(data) {
+                 return global.JSON.parse(data);
+             }
+    : // else 
+    function json_parse(data) {
+        if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
+        return (new Function("return " + data))();
+    }
+    } // if in_a_browser
     //-----------------------------------------------------------------------------------------------------
-
-    // non-standard JSON stops here
-    dbj.json.parse =
- (global.JSON && ("function" === typeof global.JSON.parse)) ?
-       dbj.json.nonstandard ?
-         function json_parse(data) {
-             if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
-             return global.JSON.parse(data);
-         }
-      : // else 
-         function json_parse(data) {
-             return global.JSON.parse(data);
-         }
-: // else 
-function json_parse(data) {
-    if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
-    return (new Function("return " + data))();
-}
-;
-    //-------------------------------------------------------------------------------------
-
-
-    dbj.reveal = function(O, drill) {
-        /// <summary>
-        /// More revealing than JSON.stringify()
-        /// </summary>
-        ///	<param name="O" type="object">
-        ///	Reveal properties and methods of this object
-        ///	</param>
-        var left_brace, rigt_brace, r;
-
-        if (typeof Array.prototype.forEach !== "function ")
-            Array.prototype.forEach = function(callback) {
-                for (var L = this.length >>> 0, j = 0; j < L; j++)
-                    callback.call(this, this[j], j, this);
-            }
-
-        // ES5 way : callback.call(thisp, this[i], i, this);
-        var callbackO = function(value, name, obj) {
-            if (!Object.prototype.hasOwnProperty.call(obj, name)) return; // do not process inherited properties
-            r += (" " + name + ": " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
-        },
-          callbackA = function(value, name, obj) {
-              r += (" " + (drill && "object" === typeof obj[name] ? dbj.reveal(obj[name], drill) : obj[name]) + ",");
-          }
-
-        if (dbj.role.name(O) === "Array") {
-            left_brace = "[", rigt_brace = "]", r = left_brace;
-            O.forEach(callbackA);
-        }
-        else if (dbj.role.name(O) === "Object") {
-            left_brace = "{", rigt_brace = "}", r = left_brace;
-            dbj.each(O, callbackO);
-        } else {
-            left_brace = "", rigt_brace = "", r = left_brace;
-            r += (O + ",");
-        }
-
-        return (r + rigt_brace).replace("," + rigt_brace, " " + rigt_brace);
-    }
-
-    dbj.each = function(OBJ, CB) {
-
-        ///<summary>
-        /// iterate over an object and call a callback: CB( prop_name , prop_value )
-        /// where CB this will be the OBJ, so that: this[prop_name] === prope_value
-        /// on each property which is "his own" or on any
-        /// property if method hasOwnProperty is not present
-        /// this should work in many cases even if Object.prototype is abused
-        /// the only 100% fool proof way is to do this, is:
-        /// for (var k in Object.prototype) delete Object.prototype[k];
-        /// before this lib is declared or, perhaps, even periodicaly
-        /// OBJ must be object, not an array !
-        ///</summary>
-        if ("Function" !== dbj.roleof(CB)) { dbj.konsole.error("bad callback argument for dbj.each()"); return false; }
-        if ("Object" !== dbj.roleof(OBJ)) { dbj.konsole.error(dbj.roleof(OBJ) +", is bad type for dbj.each()"); return false; }
-        for (var j in OBJ) {
-            if (!Object.prototype.hasOwnProperty.call(OBJ, j)) continue;
-            try {
-                // ES5 way : callback.call(thisp, this[i], i, this);
-                CB.call(OBJ, OBJ[j], j, OBJ);
-            } catch (x) {
-                dbj.konsole.error("dbj.each() : callback failed :" + x.message);
-                return false;
-            }
-        }
-        return true;
-    }
-
     dbj["date"] = { "diff": function(date1, date2) {
         ///<summary>
         ///timespan of the difference of first date and second date
@@ -309,9 +249,6 @@ function json_parse(data) {
 
 })(this);
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-(function(global) {
-})(window);
-
 (function(tos) {
 var fs_ = tos.call(function() { }),  /* function signature */
     os_ = tos.call({});              /* object signature */
