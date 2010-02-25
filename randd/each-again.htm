@@ -1,83 +1,77 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-<script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
-<meta charset=utf-8 />
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <title>DBJ*Each Research</title>
-<!--[if IE]>
-  <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-<![endif]-->
+<script src="http://www.google.com/jsapi" type="text/javascript" ></script>
+<script type="text/javascript" >
+    google.load("jquery", "1.4.2");
+//    google.load("jquery", "1.4.2", { uncompressed: false, callback: function() { alert("Google callback arguments\n" + [].join.call(arguments, "\n")) } });
+</script>
+<script src="dbj.each.js" type="text/javascript"></script>
+<script src="../dbj.es5.js" type="text/javascript"></script>
 <style type="text/css" media="all">
-  html,body { height:100%; width:100%; font:small/1.5 verdana, monospace; }
+  html,body { height:100%; width:100%; font:10px/1.5 verdana, monospace; }
   article, aside, figure, footer, header, hgroup,
   menu, nav, section { display: block; }
   hr {height:3mm;}
-  label, input { min-width: 40mm; margin:2px; padding:2px; border:1px dashed #ccc; }
-  #konsole { border: 1px solid; padding:2mm; width:90%; height: 69%; overflow:auto; }
+  label, input, button { width: 20mm; margin:2px; padding:2px; border:1px dotted #ccc; }
+  input[type="radio"] { max-width:5mm; }
+  #konsole { float:right; border: 1px dotted; padding:2mm; width:69%; overflow:auto; }
+  #frm { float:left; width:29%; }
 </style>
 </head>
 <body>
-<form action="javascript:main('frm');" id="frm" >
-<fieldset title="testing parameters">
-<label >Input object size</label><input id="OBJECT_SIZE" value="10" />
-<br />
-<label >Loop length</label><input id="LOOP_LENGTH" value="10" />
-<br />
-<label >Number of runs</label><input id="NUMBER_OF_RUNS" value="10" />
-<br />
-</fieldset>
-<hr />
-<input type="submit" value="Start" />
-</form>
-<hr />
- <p id="konsole"></p>
+<div id="frm" >
+<label >Input size<input id="OBJECT_SIZE" value="10" /></label><br />
+<label >Arguments<input id="ARGUMENTS" value="" /></label><br />
+<label >Loop length<input id="LOOP_LENGTH" value="10" /></label><br />
+<label >Number of runs<input id="NUMBER_OF_RUNS" value="10" /></label><br />
+<button onclick="main(true)" >Test Object</button><br />
+<button onclick="main(false)" >Test Array</button>
+</div>
+<p id="konsole" onclick="konsole.innerText='';" ></p>
 </body>
-<script type="text/javascript">
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    var harvester = function(frm_id, defaults) {
-        var  $frm = jQuery("form#" + frm_id, document.object),
-    getval = function(id_) { return ($frm.find("input#"+id_).val() || defaults[id_]) - 0 ; };
-    
-    for ( name in defaults ) {
-         defaults[name] = getval(name) ;
-    }
-        return defaults ;
-};
-//
-function main ( ) {
-
-    //
-    function each(object, callback, args) {
-        var name, i = 0,
-        length = object.length,
-        isObj = length === undefined || "function" === typeof object;
-        if (isObj) {
-            for (name in object) {
-                if (callback.apply(object[name], args || [name, object[name]]) === false) {
-                    break;
-                }
-            }
+<script type="text/javascript" >
+    window.onload = function() {
+        document.title = "DBJ*Each-Again&trade; " + (document.lastModified || "");
+        if (google.loader.ClientLocation != null) {
+            konsole.log("Your Location Is: " + google.loader.ClientLocation.address.city + ", " + google.loader.ClientLocation.address.region);
         } else {
-            for (; i < length; ) {
-                if (callback.apply(object[i++], args || [i - 1, object[i - 1]]) === false) {
-                    break;
+            konsole.log("Your Location Was Not Detected By Google Loader");
+        }
+    }
+</script>
+<script type="text/javascript" id="a_little_local_library">
+    var later = function(func, timeout) {
+        var tid = setTimeout(function() {
+            clearTimeout(tid); tid = null; delete tid;
+            func.apply(this || top, [].slice.call(arguments, 2));
+        }, timeout || 1000);
+    },konsole = (function(konsole_id) {
+        var el_ = document.getElementById(konsole_id);
+        return {
+            log: function() {
+                var s = "<br/>" + [].join.call(arguments, "");
+                later(function() {
+                    el_.innerHTML += s;
+                    // el_.lastChild.scrollIntoView();
+                }, 10);
+            },
+            err: function() {
+                var msg = Array.prototype.join.call(arguments, "");
+                if (window.console) {
+                    window.console.error(msg);
+                } else {
+                    this.log("<span style='color:#cc0000;'>" + msg + "</span>");
                 }
             }
-        }
-        return object;
-    }
-    //----------------------------------------------------------------------------------------------
-    var konsole = {
-        el: function() { return document.getElementById('konsole'); },
-        log: function() {
-            var s = "\r\n" + [].join.call(arguments, ""), tid = setTimeout(function() { konsole.el().innerText += s; }, 0);
-        }
-    }
+        };
+    } ("konsole"))
     , summa = (function() {
         var obj_ = {},
     sum_ = function(arr) { var l = arr.length, sum = 0; while (l--) { sum += arr[l]; }; return sum; },
-    avg_ = function(arr) { return sum_(arr) / arr.length; },
-    isArray = function(x) { return Object.prototype.toString.call(x) === "[object Array]"; };
+    avg_ = function(arr) { return sum_(arr) / arr.length; };
 
         return {
             add: function(k, v) {
@@ -92,34 +86,73 @@ function main ( ) {
             avg: function(k) { return avg_(obj_[k]); },
             all: function(k) { return obj_[k] || [] }
         };
-    })();
-    //----------------------------------------------------------------------------------------------
-    function test(obj_siz, loop_siz) {
-        var measure = function(fun) {
+    } ()),
+     harvester = function(frm_id, defaults) {
+         var $frm = jQuery("#" + frm_id, document.object), $input,
+    getval = function(id_) {
+        $input = $frm.find("input#" + id_);
+        return ($input.val() || defaults[id_]);
+    };
+         for (name in defaults) { defaults[name] = getval(name); }
+         return defaults;
+     },
+    make_object = function(size) { var o = { "size": size }; while (size--) { o[size] = size; }; return o; },
+    make_array = function(size) { var a = []; while (size--) { a[size] = size; }; return a; },
+    round = function(original_number, decimals) {
+        var V1 = original_number * Math.pow(10, decimals), V2 = Math.round(V1); 
+         return V2 / Math.pow(10, decimals);
+    };
+</script>
+<script type="text/javascript">
+//----------------------------------------------------------------------------------------------
+function main(object_iteration) {
+    function test(callback, use_objects, obj_siz, loop_siz, args ) {
+        var o = use_objects ? make_object(obj_siz) : make_array(obj_siz),
+           cb = function() { /* null-fun */};
+        try {
             var t1 = new Date(), counter = loop_siz;
-            while (counter--) { fun(); }
+            while (counter--) { callback(o, cb, [args]); }
             return (new Date() - t1) - 0;
-        },
-        make_object = function(size) { var o = { "size": size }; while (size--) { o[size] = size; }; return o; },
-        s = [],
-        o = make_object(obj_siz),
-        cb = function() { s.push(this + "," + [].join.call(arguments)); },
-        args = ["one", "two"];
-
-        summa.add("dbj",  measure(function() { each(o, cb, args) }) );
-        summa.add("jq",   measure(function() { jQuery.each(o, cb, args) }) );
+        } catch (x) {
+        konsole.err("test():" + x );
+            return -1; //  fun() has failed 
+        }
     }
     //
-    var LOOP_LENGTH = "LOOP_LENGTH", OBJECT_SIZE = "OBJECT_SIZE", NUMBER_OF_RUNS = "NUMBER_OF_RUNS",
-    vals = harvester("frm", { OBJECT_SIZE: 1e1, LOOP_LENGTH: 1e1, NUMBER_OF_RUNS: 1e1 });
-    konsole.log("Starting ", vals[NUMBER_OF_RUNS], " runs. With object size:", vals[OBJECT_SIZE], " , loop length: ", vals[LOOP_LENGTH]);
-    var tid = setTimeout(function() {
-        clearTimeout(tid); tid = null;
-        for (var j = vals[NUMBER_OF_RUNS]; j--; ) { test(vals[OBJECT_SIZE], vals[LOOP_LENGTH]); }
-        konsole.log("dbj   , total:", summa.sum("dbj"), " ms,\t\taverage:", summa.avg("dbj"));
-        konsole.log("jQery , total:", summa.sum("jq"), " ms,\t\taverage:", summa.avg("jq"));
-    }, 1000);
+    var ARGUMENTS = "ARGUMENTS",
+        LOOP_LENGTH = "LOOP_LENGTH",
+        OBJECT_SIZE = "OBJECT_SIZE", 
+        NUMBER_OF_RUNS = "NUMBER_OF_RUNS",
+        vals = harvester("frm",
+        {   ARGUMENTS: null,
+            TYPE: "object",
+            OBJECT_SIZE: 1e1,
+            LOOP_LENGTH: 1e1, 
+            NUMBER_OF_RUNS: 1e1 });
 
+    konsole.log("---------------------------------------------------------------------");
+    konsole.log("Starting ", vals[NUMBER_OF_RUNS], " runs. With input type:", object_iteration ? " as object" : " as array",
+    ", object size:", vals[OBJECT_SIZE], " , loop length: ", vals[LOOP_LENGTH]);
+     
+    function test_it ( label, test_fun )  {
+        later(function() {
+            var j = vals[NUMBER_OF_RUNS];
+            while (j--) {
+                summa.add(label,
+            test(test_fun, object_iteration, vals[OBJECT_SIZE] - 0, vals[LOOP_LENGTH] - 0, vals[ARGUMENTS])
+            );
+            }
+            konsole.log(label, ", total:", summa.sum(label), " ms,\t\taverage:", round( summa.avg(label), 2) );
+        });
+        return test_it;
+    }
+
+    test_it
+    ("jQuery", jQuery.each)
+    ("dbj.forEach", dbj.forEach)
+    ("dbj_es5", each_es5)
+    ("dbj_FT_each", optimized_each);
+//    ("dbj_optimized_but_old_way", each7)
 }
     //----------------------------------------------------------------------------------------------
 </script>

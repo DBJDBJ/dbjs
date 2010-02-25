@@ -16,11 +16,25 @@ After loading this json will be logged , changed like this
 this says that first file loaded OK, but second did not
 
 */
+/*
+* A technique for avoiding browsers' cross-domain restriction
+* Allows you to request information cross-domain from client
+* You request a script from a cross domain
+* That service must respond in JSON wrapped in a function call you specify
+*
+window.myFunc = function ( data ) {
+        alert('JSONP callback');
+}
+var script = document.createElement('script');
+script.src = 'http://ajax.googleapis.com/ajax/services/search/web?v=1.0&q=Dog&callback=myFunc';
+script.type = 'text/javascript';
+document.getElementsByTagName('head')[0].appendChild(script);
+*/
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 14 $$Date: 18/02/10 18:16 $
+/// $Revision: 16 $$Date: 24/02/10 16:58 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function(global, undefined) {
@@ -55,6 +69,8 @@ this says that first file loaded OK, but second did not
         STR_CFG_ATT = "_CFG_", STR_PTH_ATT = "_PATH_",
         STR_CFG_READY = "_ONREADY_",
         STR_LOADED_SIGNAL = "LOADED",
+        STR_DBJ_LOADER = "DBJ*Loader",
+        STR_COLON_COLON = "::" ,
         STR_SPECIAL_CFG_ID = "dbj.lib.cfg",
         loadedCompleteRegExp = /loaded|complete/,
         slice = [].slice,
@@ -76,11 +92,11 @@ this says that first file loaded OK, but second did not
     // if firebug or other window.console is not present
     var log_ = (!console || !console.log) ? function() {
         delayed_call(function() {
-            var s_ = [].join.call(arguments, '');
+            var s_ =  STR_DBJ_LOADER + STR_COLON_COLON + [].join.call(arguments, '');
             document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + s_ + "</ul></li>").replace(/\n/g, "<br/>");
         }, this, 1);
     } : function() {
-        var s_ = [].join.call(arguments, '');
+    var s_ = STR_DBJ_LOADER + STR_COLON_COLON + [].join.call(arguments, '');
         delayed_call(function() {
             console.log(s_);
         }, this, 1);
@@ -133,16 +149,21 @@ this says that first file loaded OK, but second did not
         head.insertBefore(script, head.firstChild);
     };
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+    //--------------------------------------------------------------------------
+    // this is present in ES5 as Object.keys()
     function keys(object) {
-        var k = []; for (var name in object) {
+        var k = []; 
+        if ("object" === typeof object)
+        for (var name in object) {
             if (Object.prototype.hasOwnProperty.call(object, name))
                 k.push(name);
         }
         return k;
     }
 
+    // this is dbj's sequential recursive loader
+    // it loads javascritps in sequence, vs. in parallel
+    // when last one is done it calls the onready callback
     var loader = function(jQuery, CFG_PATH, CFG_FILE, callback, undefined) {
         jQuery.ajaxSetup({ async: false }); // CRUCIAL!
         $.getJSON(
@@ -166,7 +187,7 @@ this says that first file loaded OK, but second did not
                     }
                 });
             }
-            inner_loader(0, key);
+            inner_loader(0, key); // start loading from the first one
         });
     };
     //
