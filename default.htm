@@ -2,18 +2,10 @@
 <html>
 <head>
 <title>DBJS*(tm) QUNIT Tests</title>
-<script src="dbj.log.js" type="text/javascript"></script>
- <script type="text/javascript">
-     var crazyLoader = function() {
-         for (var i = 0, L = arguments.length; i < L; i++) {
-           document.write("<script type='text/javascript' src='" + arguments[i] + "' ></" + "script>");
-         }
-     }       
-</script>
+<script src="dbj.hdr.js" type="text/javascript"></script>
 <link href="http://github.com/jquery/qunit/raw/master/qunit/qunit.css" rel="stylesheet" type="text/css" />
 <script type="text/javascript">
-    if ("object" !== typeof window.JSON) { crazyLoader('http://dbj.org/4/json2.js'); }
-crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js",
+dbj.crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js",
 "http://github.com/jquery/qunit/raw/master/qunit/qunit.js",
 "dbj.lib.js" ,
 "dbj.es5.js" 
@@ -114,6 +106,12 @@ crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js",
 </script>
 <script type="text/javascript">
     var tests = {
+    "DBJS*Mechanisms": { 
+            "DBJ": [
+            [function() { return typeof dbj }, "object"],
+            [function() { return dbj.toString() }, true] /* this will fail and display dbj.toString() result */
+            ]
+        },
         "ES5 Compatibility": {  // begin module 
             "Array":
                     [
@@ -175,8 +173,8 @@ crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js",
                        [function() { return dbj.cond(2, 1, "blue", 2, "red", /*default is*/"green"); }, "red"]
                   ],
             " dbj.forEach().": [
-                       [function() { var r=[]; dbj.forEach({ a:1,b:2 }, function(v, n, o) { r.push(v); }); return ""+r }, "1,2"],
-                       [function() { var r=[]; dbj.forEach([1, 2], function(v, n, o) { r[n] = v; }); return ""+r }, "1,2"]
+                       [function() { var r = []; dbj.forEach({ a: 1, b: 2 }, function(v, n, o) { r.push(v); }); return "" + r }, "1,2"],
+                       [function() { var r = []; dbj.forEach([1, 2], function(v, n, o) { r[n] = v; }); return "" + r }, "1,2"]
                   ],
             " String ulitities ": [
                 [function() { return "ABCBDEB".minus("B"); }, "ACDE"],
