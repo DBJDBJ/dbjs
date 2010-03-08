@@ -47,7 +47,32 @@
         }
     }; // local
     /// The DBJ library namespace.
-    var dbj = global.dbj = {
+    window.dbj || (window.dbj = {});
+    if ("function" !== typeof dbj.extend)
+        dbj.extend = function() {
+            var options, src, copy;
+            for (var i = 0, length = arguments.length; i < length; i++) {
+                if (!(options = arguments[i])) continue;
+                for (var name in options) {
+                    copy = options[name];
+                    // Prevent never-ending loop
+                    if (dbj === copy) continue;
+                    // Don't bring in undefined values
+                    if (copy !== undefined) dbj[name] = copy;
+                }
+            }
+            return dbj;
+        };
+
+
+        dbj.extend({
+      "later": function(func, timeout) {
+                /* execute a function bit latter, default timeout is 1 sec */
+                var tid = setTimeout(function() {
+                    clearTimeout(tid); tid = null; delete tid;
+                    func.apply(this || top, [].slice.call(arguments, 2));
+                }, timeout || 1000);
+            },
         "konsole": local.konsole,
         "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 25/02/10 14:06 $"; },
         "version": "1." + "$Revision: 22 $".match(/\d+/),
@@ -176,7 +201,7 @@
             }
         })()
 
-    }; // eof dbj {}
+    }); // eof dbj.extend() call
 
     //-----------------------------------------------------------------------------------------------------
     if (dbj.ftr.in_a_browser) // in a browser
