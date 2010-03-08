@@ -1,7 +1,7 @@
 ﻿///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.MATH.JS(tm)
-/// $Revision: 1 $$Date: 11/01/10 16:00 $
+/// $Revision: 2 $$Date: 29/01/10 13:32 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /// Dependencies : DBJ.LIB.JS 1.0.0 or higher
@@ -100,6 +100,12 @@
         ///<summary/>
         return 5 / 9 * (this - 32);
     }
+    
+    Number.prototype.round = function(original_number, decimals) {
+            /* quick number rounder */
+                var V1 = original_number * Math.pow(10, decimals), V2 = Math.round(V1);
+                return V2 / Math.pow(10, decimals);
+            }
 
     // to convert radians to degrees divide by (Math.PI / 180), and multiply by this to convert the other way.
     var pi_over_180 = Math.PI / 180;
