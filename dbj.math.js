@@ -1,7 +1,7 @@
 ﻿///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.MATH.JS(tm)
-/// $Revision: 2 $$Date: 29/01/10 13:32 $
+/// $Revision: 3 $$Date: 9/03/10 0:29 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /// Dependencies : DBJ.LIB.JS 1.0.0 or higher

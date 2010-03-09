@@ -6,12 +6,13 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 22 $$Date: 25/02/10 14:06 $
+/// $Revision: 24 $$Date: 9/03/10 18:19 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
     //
-    var TOS = Object.prototype.toString,
+    var  
+    TOS = Object.prototype.toString,
     HOP = Object.prototype.hasOwnProperty,
     SLC = Array.prototype.slice,
     JON = Array.prototype.join,
@@ -74,8 +75,8 @@
                 }, timeout || 1000);
             },
         "konsole": local.konsole,
-        "toString": function() { return "DBJ*JSLib(tm) " + this.version + " $Date: 25/02/10 14:06 $"; },
-        "version": "1." + "$Revision: 22 $".match(/\d+/),
+        "toString": function() { return "DBJ*JSFM(tm) " + this.version + " $Date: 9/03/10 18:19 $"; },
+        "version": "1." + "$Revision: 24 $".match(/\d+/),
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
@@ -385,8 +386,8 @@ var fs_ = tos.call(function() { }),  /* function signature */
         String.prototype.minus = function(what_) {
             ///<summary>
             /// "ABCBDBEB".minus("B"), returns : "ACDE"
-            /// Argument is optional, by default is is one empty space
-            /// myText.minus(), returns myText without spaces
+            /// Argument is optional, and by default is one empty space
+            /// So: "A B C".minus(), returns "ABC"
             /// argument can be an regular expression
             /// reg.exp. given does not require 'g' or 'm' modifier
             /// if argument is not found in the original, the original is returned
@@ -394,7 +395,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
             return (this.split(what_ || String.space)).join(String.empty);
         }
 
-    if (String.F !== typeof "".trim) {
+    if ("function" !== typeof "".trim) {
         ///<summary>
         // String.trim() ES5
         /// due to the bug in IE where "\u00A0" is not covered by \s
