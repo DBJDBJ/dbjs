@@ -67,15 +67,32 @@
 
 </script>
 <script type="text/javascript">
-//----------------------------------------------------------------------------------------------
-function main(object_iteration) {
+    //----------------------------------------------------------------------------------------------
+
+    function Score(callback, timeToRun) {
+        //higher is better
+        var start = (new Date()).getTime(), time = 0, score = 0;
+        timeToRun = timeToRun || 1000;
+        while (((new Date()).getTime() - start) < timeToRun) {
+            callback();
+            score++;
+        }
+        return score;
+    }
+
+    function main(object_iteration) {
+
+
     function test(callback, use_objects, obj_siz, loop_siz, args ) {
         var o = use_objects ? make_object(obj_siz) : make_array(obj_siz),
            cb = function() { /* null-fun */};
         try {
+        /*
             var t1 = new Date(), counter = loop_siz;
             while (counter--) { callback(o, cb, [args]); }
             return (new Date() - t1) - 0;
+         */
+            return Score(function() { callback(o, cb, [args]); }, loop_siz );
         } catch (x) {
         konsole.err("test():" + x );
             return -1; //  fun() has failed 
@@ -105,7 +122,7 @@ function main(object_iteration) {
             test(test_fun, object_iteration, vals[OBJECT_SIZE] - 0, vals[LOOP_LENGTH] - 0, vals[ARGUMENTS])
             );
             }
-            konsole.log(label, ", total:", dbj.summa.sum(label), " ms,\t\taverage:", dbj.round( dbj.summa.avg(label), 2) );
+            konsole.log(label, ",\t\ttotal:", dbj.summa.sum(label), " ms,\t\taverage:", dbj.round( dbj.summa.avg(label), 2) );
         });
         return test_this;
     }
