@@ -34,20 +34,16 @@ document.getElementsByTagName('head')[0].appendChild(script);
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 16 $$Date: 24/02/10 16:58 $
+/// $Revision: 17 $$Date: 9/03/10 18:19 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function(global, undefined) {
 
-    if (window.dbj_loader_cache === undefined) {
-        window.dbj_loader_cache = {};
-    }
+    window.dbj_loader_cache || (window.dbj_loader_cache = {});
 
-    var join = function() { return [].join.call(arguments, ''); },
-
-    terror = function() { var s_ = [].join.call(arguments, ''); log_.call(window, s_); throw new Error(0xFFFF, "DBJ*Loader ERROR: " + s_); },
+    var 
         dbj = dbj || (dbj = {}),
-        STR_JQUERY_URL = "http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js",
+        STR_JQUERY_URL = "http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js",
         STR_APPLY = "apply",
         STR_ASYNC = "async",
         STR_CACHE = "cache",
@@ -65,23 +61,31 @@ document.getElementsByTagName('head')[0].appendChild(script);
         STR_READY_STATE = "readyState",
         STR_URL = "url",
         STR_SCRIPT = "script",
+        STR_SRC = "src",
         STR_TYPE = "type",
         STR_CFG_ATT = "_CFG_", STR_PTH_ATT = "_PATH_",
         STR_CFG_READY = "_ONREADY_",
         STR_LOADED_SIGNAL = "LOADED",
         STR_DBJ_LOADER = "DBJ*Loader",
-        STR_COLON_COLON = "::" ,
+        STR_COLON_COLON = "::",
         STR_SPECIAL_CFG_ID = "dbj.lib.cfg",
         loadedCompleteRegExp = /loaded|complete/,
         slice = [].slice,
-        head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement;
+        head = document[STR_GET_ELEMENTS_BY_TAG_NAME]("head")[0] || document.documentElement,
+        join = function() { return [].join.call(arguments, ''); },
+        terror = function() {
+            var s_ = [].join.call(arguments, '');
+            if (console && console.error) console.error(s_);
+            throw new Error(0xFFFF, STR_DBJ_LOADER + " ERROR: " + s_);
+        };
 
     // Defer execution just enough for all browsers (especially Opera!)
-    function delayed_call(func, self, time_out) {
-        var tid = setTimeout(function() {
+    function later(func, self, time_out) {
+        var THAT = this, ARG = arguments, tid = setTimeout(function() {
             clearTimeout(tid); delete tid;
             try {
-                func[STR_APPLY](self || global, slice[STR_CALL](arguments, 2));
+                if (!func) debugger;
+                func[STR_APPLY](self || global, slice[STR_CALL](ARG, 2));
             } catch (x) {
                 terror.call(global, " name: ", x, "", ", message: ", x.message);
             }
@@ -90,38 +94,52 @@ document.getElementsByTagName('head')[0].appendChild(script);
 
     // we do this log-method-quickie here so that we do not depend on some library
     // if firebug or other window.console is not present
-    var log_ = (!console || !console.log) ? function() {
-        delayed_call(function() {
-            var s_ =  STR_DBJ_LOADER + STR_COLON_COLON + [].join.call(arguments, '');
-            document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + s_ + "</ul></li>").replace(/\n/g, "<br/>");
-        }, this, 1);
-    } : function() {
-    var s_ = STR_DBJ_LOADER + STR_COLON_COLON + [].join.call(arguments, '');
-        delayed_call(function() {
-            console.log(s_);
-        }, this, 1);
-    };
+    var LOG = (function() {
+        var local = { end_: null, msg: null, begin_: null, opened: false };
+        function is_worker(internal_worker) {
+            if ("function" !== typeof internal_worker) return false; // signal it was not a internal worker
+            internal_worker.call(local);
+            return true; // signal it was an internal worker
+        }
 
+        if (window.console) {
+            local.begin_ = function() { if (!window.firebug && !local.opened) console.group(STR_DBJ_LOADER); local.opened = !local.opened; }
+            local.end_ = function() { if (!window.firebug && local.opened) console.groupEnd(); local.opened = !local.opened; };
+            local.msg = function(s_) { return s_; }
+            return function() {
+                if (is_worker(arguments[0])) return;
+                var A = local.msg([].join.call(arguments, ''));
+                later(function() {
+                    console.log(A);
+                }, this, 1000);
+            };
+        } else {
+            local.begin_ = function() { /*...*/ }
+            local.end_ = function() { /*...*/ };
+            local.msg = function(s_) { return STR_DBJ_LOADER + STR_COLON_COLON + s_; };
+            return function() {
+                if (is_worker(arguments[0])) return;
+                var A = local.msg([].join.call(arguments, ''));
+                later(function() {
+                    document.body.innerHTML += ("<ul style='margin:2px; padding:2px; font:8px/1.0 verdana,tahoma,arial; color:black; background:white;'><li>" + A + "</ul></li>").replace(/\n/g, "<br/>");
+                }, this, 1000);
+            }
+        };
+
+    } ());
+    LOG.OPEN = function() { LOG(function() { this.begin_(); }); };
+    LOG.CLOSE = function() { later(function() { LOG(function() { this.end_() }); }, LOG, 2500); };
 
     // for the time being this crazzy nugget is winning ...
     var loadScript = function(options, callback) {
-
         if (global.dbj_loader_cache[options[STR_URL]]) return;
-
-        var script = document[STR_CREATE_ELEMENT](STR_SCRIPT), done = false;
-
+        var script = document[STR_CREATE_ELEMENT](STR_SCRIPT),
+                done = false;
         script[STR_ASYNC] = STR_ASYNC;
         script[STR_TYPE] = "text/javascript";
-
-        if (options[STR_CHARSET]) {
-            script[STR_CHARSET] = options[STR_CHARSET];
-        }
-
-        if (options["id"]) {
-            script["id"] = options["id"];
-        }
-
-        script.src = options[STR_URL];
+        script[STR_CHARSET] = options[STR_CHARSET] || "";
+        script["id"] = options["id"] || "";
+        script[STR_SRC] = options[STR_URL];
 
         // Attach handlers for all browsers
         script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = function() {
@@ -132,16 +150,9 @@ document.getElementsByTagName('head')[0].appendChild(script);
                 script[STR_ON_LOAD] = script[STR_ON_READY_STATE_CHANGE] = null;
 
                 global.dbj_loader_cache[this.src] = this.id || true;
-                log_.call(global, script.src, " Loaded");
-
                 head.removeChild(script);
 
-                if ("function" === typeof callback) {
-                    if (global.opera)
-                        delayed_call(callback, global);
-                    else
-                        callback.call(global);
-                }
+                if ("function" === typeof callback) later(callback, global);
             }
         };
         // Use insertBefore instead of appendChild  to circumvent an IE6 bug.
@@ -150,36 +161,45 @@ document.getElementsByTagName('head')[0].appendChild(script);
     };
 
     //--------------------------------------------------------------------------
-    // this is present in ES5 as Object.keys()
-    function keys(object) {
-        var k = []; 
-        if ("object" === typeof object)
-        for (var name in object) {
-            if (Object.prototype.hasOwnProperty.call(object, name))
-                k.push(name);
+    // this is present in ES5
+    if (String.F !== typeof "".trim) {
+        var Ltrim = /^[\s\u00A0]+/, Rtrim = /[\s\u00A0]+$/;
+        String.prototype.trim = function() {
+            return this.replace(Ltrim, String.empty).replace(Rtrim, String.empty);
         }
-        return k;
-    }
+    };
+    if ("function" !== typeof Object.keys)
+        Object.keys = function(object) {
+            var k = [];
+            if ("object" === typeof object)
+                for (var name in object) {
+                if (Object.prototype.hasOwnProperty.call(object, name))
+                    k.push(name);
+            }
+            return k;
+        };
 
     // this is dbj's sequential recursive loader
     // it loads javascritps in sequence, vs. in parallel
     // when last one is done it calls the onready callback
     var loader = function(jQuery, CFG_PATH, CFG_FILE, callback, undefined) {
-        jQuery.ajaxSetup({ async: false }); // CRUCIAL!
-        $.getJSON(
-        CFG_PATH + CFG_FILE,
-        function(data, stat) {
-            var key = keys(data);
+
+        CFG_PATH = CFG_PATH.trim();
+        CFG_FILE = CFG_FILE.trim();
+        var json_string = CFG_FILE.charAt(0) === "{";
+
+        function load_q(data, stat) {
+            var key = Object.keys(data);
             function inner_loader(j, key) {
                 var js = key[j];
                 if (!js) return;
                 loadScript({ "url": CFG_PATH + js }, function() {
-                    log_("Loaded:", CFG_PATH, js, " :status: ", stat);
-                    if (j === (key.length - 1)) {
-                        // log_("j: ", j, ", l: ", key.length - 1, ", time to call the final callback");
+                    LOG("Loaded:", CFG_PATH, js, " :status: ", stat);
+                    if (j === (key.length - 1)) {// time to call the final callback
                         if ("function" === typeof callback) {
-                            log_("Now calling ONREADY handler");
-                            delayed_call(callback, window);
+                            LOG("Now calling final ONREADY handler");
+                            later(callback, window);
+                            LOG.CLOSE();
                             return;
                         }
                     } else {
@@ -188,16 +208,23 @@ document.getElementsByTagName('head')[0].appendChild(script);
                 });
             }
             inner_loader(0, key); // start loading from the first one
-        });
+        };
+
+        if (!json_string) {
+            jQuery.ajaxSetup({ async: false }); // CRUCIAL!
+            $.getJSON(CFG_PATH + CFG_FILE, load_q);
+        } else {
+            load_q(JSON.parse(CFG_FILE), "user declared loader sequence: " + CFG_FILE);
+        }
     };
     //
     var on_jq_ready = function() {
         /*
         jQuery(document.body).error(function(msg, url, line) {
-        log_("DBJ*Loader XHR Error: ", msg, "url: ", url, line); return false;
+        LOG("DBJ*Loader XHR Error: ", msg, "url: ", url, line); return false;
         });
         jQuery(document.body).ajaxError(function(event, xhr, settings, thrownError) {
-        log_("DBJ*Loader XHR Error requesting: ", settings.url, (thrownError ? ", message: " + thrownError.message : "")); return false;
+        LOG("DBJ*Loader XHR Error requesting: ", settings.url, (thrownError ? ", message: " + thrownError.message : "")); return false;
         });
         */
         var $cfg = jQuery("script[" + STR_CFG_ATT + "][src]");
@@ -213,7 +240,7 @@ document.getElementsByTagName('head')[0].appendChild(script);
                         CFG_ONREADY = $this.attr(STR_CFG_READY);
 
                 if (top.dbj_was_here[path]) {
-                    log_("Already done: ", path);
+                    LOG("Already done: ", path);
                     return;
                 }
                 top.dbj_was_here[path] = true;
@@ -230,22 +257,31 @@ document.getElementsByTagName('head')[0].appendChild(script);
                     on_ready = (new Function("return " + CFG_ONREADY))();
 
                     if ("function" !== typeof on_ready) {
-                        log_.call(global, "User defined ready handler can not be used, because it is not a function");
+                        LOG.call(global, "User defined ready handler can not be used, because it is not a function");
                         on_ready = defualt_onready;
                     }
-                    log_("Function : ", CFG_ONREADY, "(), is found to be user defined onready handler");
+                    LOG("Function : ", CFG_ONREADY, "(), is found to be user defined onready handler");
                 } catch (x) {
-                    log_.call(global, "ERROR while evaluating _ON_READY_ attribute. Default onready handler will be used.");
+                    LOG.call(global, "ERROR while evaluating _ON_READY_ attribute. Default onready handler will be used.");
                     on_ready = defualt_onready;
                 }
                 loader(jQuery, CFG_PATH, CFG_FILE, on_ready);
             } catch (x) {
-                log_.call(global, "ERRROR:\n" + x.message);
+                LOG.call(global, "ERRROR:\n" + x.message);
             }
         });
     };
     //
     top.dbj_was_here = [];
-    loadScript({ "url": STR_JQUERY_URL }, on_jq_ready);
+    LOG.OPEN();
+
+    function load_jquery() { loadScript({ "url": STR_JQUERY_URL }, on_jq_ready); }
+
+    if ("object" !== typeof window.JSON) {
+        loadScript({ "url": "http://dbj.org/4/json2.js" }, load_jquery);
+    } else {
+        load_jquery();
+    }
+
 })(window);
     ////////////////////////////////////////////////////////////////////////////////////////
