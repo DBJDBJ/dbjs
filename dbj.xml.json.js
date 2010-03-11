@@ -17,12 +17,12 @@
             v = v || ""; // DBJ: value may be null
             if (!name) // DBJ: but name can not
                 return xml;
-            if (Object.prototype.toString.call(v) === "[object Array]") {
+            if (dbj.roleof(v) === "Array") {
                 // DBJ: added above usage
                 for (var i = 0, n = v.length; i < n; i++)
                     xml += ind + toXml(v[i], name, ind + "\t") + "\n";
             }
-            else if (Object.prototype.toString.call(v) === "[object Object]") {
+            else if (dbj.roleof(v) === "Object") {
                 // DBJ: added above usage
                 var hasChild = false;
                 xml += ind + "<" + name;
@@ -45,13 +45,13 @@
                     xml += (xml.charAt(xml.length - 1) == "\n" ? ind : "") + C(name);
                 }
             }
-            else if (Object.prototype.toString.call(v) === "[object Number]") {
+            else if (dbj.roleof(v) === "Number") {
                 xml += ind + O(name) + (v + "") + C(name);
             }
-            else if (Object.prototype.toString.call(v) === "[object Date]") {
+            else if (dbj.roleof(v) === "Date") {
                 xml += ind + O(name) + (v + "") + C(name);
             }
-            else if (Object.prototype.toString.call(v) === "[object String]") {
+            else if (dbj.roleof(v) === "String") {
                 xml += ind + O(name) + dbj.decode(v) + C(name);
             }
             else {
@@ -90,7 +90,7 @@ var xml = '<e name="value">text</e>',
             catch (e) { dom = null; }
             return dom;
         }
-    } : !!window.ActiveXObject ? function(xml) {
+    } : dbj.roleof(ActiveXObject) === "Function" ? function(xml) {
         var dom = new ActiveXObject('Microsoft.XMLDOM'), error = null;
         try {
             dom.async = false;
@@ -180,20 +180,20 @@ License: http://creativecommons.org/licenses/LGPL/2.1/
         }
         X.toJson = function(o, name, ind) {
             var json = name ? ("\"" + name + "\"") : "";
-            if (Object.prototype.toString.call(o) === "[object Array]") {
+            if (dbj.roleof(o) === "Array") {
                 for (var i = 0, n = o.length; i < n; i++)
                     o[i] = X.toJson(o[i], "", ind + "\t");
                 json += (name ? ":[" : "[") + (o.length > 1 ? ("\n" + ind + "\t" + o.join(",\n" + ind + "\t") + "\n" + ind) : o.join("")) + "]";
             }
             else if (o == null)
                 json += (name && CL) + "null";
-            else if (Object.prototype.toString.call(o) === "[object Object]") {
+            else if (dbj.roleof(o) === "Object") {
                 var arr = [];
                 for (var m in o)
                     arr[arr.length] = X.toJson(o[m], m, ind + "\t");
                 json += (name ? (CL + LB) : LB) + (arr.length > 1 ? ("\n" + ind + "\t" + arr.join(",\n" + ind + "\t") + "\n" + ind) : arr.join("")) + RB;
             }
-            else if (Object.prototype.toString.call(o) === "[object String]")
+            else if (dbj.roleof(o) === "String")
                 json += (name && CL) + "\"" + o.toString() + "\"";
             else
                 json += (name && CL) + o.toString();
