@@ -6,7 +6,7 @@
 ///
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LIB.JS(tm)
-/// $Revision: 24 $$Date: 9/03/10 18:19 $
+/// $Revision: 25 $$Date: 11/03/10 15:29 $
 ///
 /// Dependencies : none
 (function(global, undefined) {
@@ -75,8 +75,8 @@
                 }, timeout || 1000);
             },
         "konsole": local.konsole,
-        "toString": function() { return "DBJ*JSFM(tm) " + this.version + " $Date: 9/03/10 18:19 $"; },
-        "version": "1." + "$Revision: 24 $".match(/\d+/),
+        "toString": function() { return "DBJ*JSFM(tm) " + this.version + " $Date: 11/03/10 15:29 $"; },
+        "version": "1." + "$Revision: 25 $".match(/\d+/),
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
@@ -474,11 +474,13 @@ var fs_ = tos.call(function() { }),  /* function signature */
         }
 
     if (String.F != typeof String.has)
-        String.prototype.has = function(c) { return this.indexOf(c) > -1; };
+        String.prototype.has = function(c) { 
     ///<summary>
     ///return true if char c found in this string
     ///signals only the first instance found
     ///</summary>
+    return this.indexOf(c) > -1;
+    };
 
     //
     // .net string.format like function
@@ -645,7 +647,7 @@ new_line: (new RegExp).compile("\\n+|\\r+","mg")
             /// NOTE: for DOM objects function bellow will return "object"
             ///       in IE. example: window.alert returns "object"
             ///</summary>
-            return Object.prototype.toString.call(o).match(/\w+/g)[1];
+            return o === undefined ? "undefined" : o === null ? "null" : Object.prototype.toString.call(o).match(/\w+/g)[1];
         },
         names: {
         ///<summary>

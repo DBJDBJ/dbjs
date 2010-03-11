@@ -106,7 +106,7 @@ dbj.crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js
 </script>
 <script type="text/javascript">
     var tests = {
-    "DBJS*Mechanisms": { 
+        "DBJS*Mechanisms": {
             "DBJ": [
             [function() { return typeof dbj }, "object"],
             [function() { return dbj.toString() }, true] /* this will fail and display dbj.toString() result */
@@ -192,9 +192,29 @@ dbj.crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js
                 [function() { return "{0}{1}{2}".format(1, 2, 3); }, "123"],
                 [function() { return "{0}{1}{2}".format(0); }, "0{1}{2}"],
                 [function() { return "{99}".format("!"); }, "{99}"]
-              ]
+              ],
+            "DBJ role system": [
+                [function() { return dbj.roleof([]); }, "Array"],
+                [function() { return dbj.roleof(true); }, "Boolean"],
+                [function() { return dbj.roleof(new Date()); }, "Date"],
+                [function() { return dbj.roleof(new Error(0xFF, ".")); }, "Error"],
+                [function() { return dbj.roleof(function() { }); }, "Function"],
+                [function() { return dbj.roleof(Math); }, "Math"],
+                [function() { return dbj.roleof(1); }, "Number"],
+                [function() { return dbj.roleof({}); }, "Object"],
+                [function() { return dbj.roleof(/./); }, "RegExp"],
+                [function() { return dbj.roleof(""); }, "String"],
+                [function() { return dbj.roleof(window.JSON || undefined); }, (window.JSON ? "JSON" : "undefined")],
+                [function() { return dbj.roleof(window.Arguments || undefined ); }, (window.Arguments ? "Arguments" : "undefined")],
+                [function() { return dbj.roleof(undefined); }, "undefined"],
+                [function() { return dbj.roleof(null); }, "null"]
+            ]
 
         }
 }         // eof tests
   </script>
 </html>
+<!--------------
+ new Array, new Boolean, new Date, new Error, new Function, Math,
+	        new Number, new Object, new RegExp, new String
+--------------->	        
