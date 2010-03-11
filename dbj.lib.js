@@ -378,7 +378,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
     String.S = "string";
     String.N = "number";
     String.NL = "\n";
-    //@cc_on String.NL = "\r\n";
+    //@cc_onString.NL = "\r\n";
     String.T = "\t";
     String.R = "\r";
 
@@ -395,18 +395,28 @@ var fs_ = tos.call(function() { }),  /* function signature */
             return (this.split(what_ || String.space)).join(String.empty);
         }
 
-    if ("function" !== typeof "".trim) {
-        ///<summary>
-        // String.trim() ES5
-        /// due to the bug in IE where "\u00A0" is not covered by \s
-        /// we have to explicitly add it to the regexp
-        ///</summary>
-        var Ltrim = /^[\s\u00A0]+/, Rtrim = /[\s\u00A0]+$/ ;
+    if (String.F !== typeof "".trim) {
+        var Ltrim = /^\s+/, Rtrim = /\s+$/;
+        // Verify that \s matches non-breaking spaces (IE fails on this test)
+        if (!/\s/.test("\xA0")) {
+            // due to the bug in IE where "\u00A0" is not covered by \s
+            // we have to explicitly add it to the regexp
+            Ltrim = /^[\s\xA0]+/;
+            Rtrim = /[\s\xA0]+$/;
+        }
         String.prototype.trim = function() {
-            return this.replace(Ltrim, String.empty).replace(Rtrim, String.empty );
+            ///<summary>
+            // String.trim() ES5
+            ///</summary>
+                return this.replace(Ltrim, String.empty).replace(Rtrim, String.empty);
+            }
+    }
+    // String.trim() is *not* part of ES5. It is an Mozzila invention.
+    if (String.F !== typeof String.trim) {
+        String.trim = function(text) {
+            return !text ? "" : String.prototype.trim.call(text.toString());
         }
     }
-
     if (String.F !== typeof "".reverse)
         String.prototype.reverse = function() {
             ///<summary>
@@ -444,14 +454,14 @@ var fs_ = tos.call(function() { }),  /* function signature */
             ///<summary>
             /// cut from left to size l. pad on left if smaller
             ///</summary>
-    return this.length < l ? this.lpad(l, c) : this.slice(this.length - l);
+            return this.length < l ? this.lpad(l, c) : this.slice(this.length - l);
         }
     if (String.F !== typeof "".rcut)
         String.prototype.rcut = function(l, c) {
             ///<summary>
             ///cut from right to size l. pad on right if smaller
             ///</summary>
-    return this.length < l ? this.rpad(l, c) : this.substr(0, l);
+            return this.length < l ? this.rpad(l, c) : this.substr(0, l);
         }
 
     if (String.F !== typeof "".wrap)
