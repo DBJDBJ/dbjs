@@ -34,7 +34,7 @@ document.getElementsByTagName('head')[0].appendChild(script);
 /// GPL (c) 2009 by DBJ.ORG
 /// DBJ.LDR.JS(tm)
 ///
-/// $Revision: 17 $$Date: 9/03/10 18:19 $
+/// $Revision: 18 $$Date: 10/03/10 17:56 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 (function(global, undefined) {
@@ -130,7 +130,7 @@ document.getElementsByTagName('head')[0].appendChild(script);
     LOG.OPEN = function() { LOG(function() { this.begin_(); }); };
     LOG.CLOSE = function() { later(function() { LOG(function() { this.end_() }); }, LOG, 2500); };
 
-    // for the time being this crazzy nugget is winning ...
+    // for the time being this method is winning ...
     var loadScript = function(options, callback) {
         if (global.dbj_loader_cache[options[STR_URL]]) return;
         var script = document[STR_CREATE_ELEMENT](STR_SCRIPT),
@@ -162,7 +162,7 @@ document.getElementsByTagName('head')[0].appendChild(script);
 
     //--------------------------------------------------------------------------
     // this is present in ES5
-    if (String.F !== typeof "".trim) {
+    if ("function" !== typeof "".trim) {
         var Ltrim = /^[\s\u00A0]+/, Rtrim = /[\s\u00A0]+$/;
         String.prototype.trim = function() {
             return this.replace(Ltrim, String.empty).replace(Rtrim, String.empty);
@@ -189,7 +189,8 @@ document.getElementsByTagName('head')[0].appendChild(script);
         var json_string = CFG_FILE.charAt(0) === "{";
 
         function load_q(data, stat) {
-            var key = Object.keys(data);
+            // key is array of js file names
+            // j is index in that array
             function inner_loader(j, key) {
                 var js = key[j];
                 if (!js) return;
@@ -207,7 +208,7 @@ document.getElementsByTagName('head')[0].appendChild(script);
                     }
                 });
             }
-            inner_loader(0, key); // start loading from the first one
+            inner_loader(0, Object.keys(data)); // start loading from the first one
         };
 
         if (!json_string) {
