@@ -205,11 +205,21 @@ dbj.crazyLoader("http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js
                 [function() { return dbj.roleof(/./); }, "RegExp"],
                 [function() { return dbj.roleof(""); }, "String"],
                 [function() { return dbj.roleof(window.JSON || undefined); }, (window.JSON ? "JSON" : "undefined")],
-                [function() { return dbj.roleof(window.Arguments || undefined ); }, (window.Arguments ? "Arguments" : "undefined")],
+                [function() { return dbj.roleof(window.Arguments || undefined); }, (window.Arguments ? "Arguments" : "undefined")],
                 [function() { return dbj.roleof(undefined); }, "undefined"],
                 [function() { return dbj.roleof(null); }, "null"]
+            ],
+            "DBJ role system isXXX functions ": [
+                [function() { return dbj.role.isArray([]); }, true],
+                [function() { return dbj.role.isBoolean(1 === 1); }, true],
+                [function() { return dbj.role.isDate(new Date()); }, true],
+                [function() { return dbj.role.isError(new Error(".")); }, true],
+                [function() { return dbj.role.isFunction(Function); }, true],
+                [function() { return dbj.role.isMath(Math); }, true],
+                [function() { return dbj.role.isObject({}); }, true],
+                [function() { return dbj.role.isRegExp(/./); }, true],
+                [function() { return dbj.role.isString(""); }, true]
             ]
-
         }
 }         // eof tests
   </script>
