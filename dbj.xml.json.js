@@ -2,7 +2,7 @@
 /// (c) 2009 by DBJ.ORG(tm)
 /// This work is licensed under Creative Commons GNU LGPL License.
 ///	License: http://creativecommons.org/licenses/LGPL/2.1/
-/// $Revision: 1 $$Date: 11/01/10 16:00 $
+/// $Revision: 2 $$Date: 12/03/10 17:18 $
 (function($, dbj) {
     var window = this, undefined;
     /*	Inspired by:  Stefan Goessner/2006 http://goessner.net/ 
@@ -68,7 +68,7 @@
     dbj.json2xml.rootname = "json";
     dbj.json2xml.open = function(tag) { return "<" + dbj.json2xml.legalize(tag) + ">"; }
     dbj.json2xml.close = function(tag) { return "</" + dbj.json2xml.legalize(tag) + ">"; }
-    dbj.json2xml.legalize = function(name) { return name.replace(/\~\$|\@|\W/g,'_'); }
+    dbj.json2xml.legalize = function(name) { return name.replace(/\~\$|\@|\W/g, '_'); }
 
 
     /*
@@ -81,31 +81,20 @@ var xml = '<e name="value">text</e>',
     json = xml2json(dom),
     xml2 = json2xml(eval(json));
     */
-    dbj.parseXml = window.DOMParser ? function(xml) {
-        var dom = null;
-        if (window.DOMParser) {
-            try {
-                dom = (new DOMParser()).parseFromString(xml, "text/xml");
-            }
-            catch (e) { dom = null; }
-            return dom;
-        }
-    } : dbj.roleof(ActiveXObject) === "Function" ? function(xml) {
-        var dom = new ActiveXObject('Microsoft.XMLDOM'), error = null;
-        try {
-            dom.async = false;
-            if (!dom.loadXML(xml)) // parse error ..
-                error = "XML Parsing Error: " + dom.parseError.reason + ", src text: " + dom.parseError.srcText;
-        }
-        catch (e) {
-            dom = null;
-        }
-        if (error) throw new Error(0xFF, error);
-        return dom;
+    dbj.parseXml = dbj.role.isFunction(window.DOMParser) ? function(xml) {
+        // returns xml dom doc , or throws exception 
+        return (new DOMParser()).parseFromString(xml, "text/xml");
     }
-   : function(xml) {
+   : dbj.role.isFunction(window.ActiveXObject) ? function(xml) {
+    // returns xml dom doc , or throws exception 
+    var dom, error = null;
+        dom = new ActiveXObject('Microsoft.XMLDOM');
+        dom.async = false;
+        if (!dom.loadXML(xml)) // parse error ..
+            throw "XML Parsing Error: " + dom.parseError.reason + ", src text: " + dom.parseError.srcText;
+    return dom;
+   } : function(xml) {
        throw new Error(0xFF, "Cannot parse xml in this browser?");
-       return;
    }
     /*	This work is licensed under Creative Commons GNU LGPL License.
 
