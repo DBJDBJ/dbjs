@@ -13,6 +13,12 @@
   input[type="radio"] { max-width:5mm; }
   #konsole { float:right; border: 1px dotted; padding:2mm; width:69%; overflow:auto; }
   #frm { float:left; width:29%; }
+
+    table.result { border:solid 1px #C0C0C0; font: inherit; width:99%; }
+    table.result td { border:solid 1px  #C0C0C0; }
+    table.result th { border:solid 1px  #C0C0C0; font-weight:bold; background-color:#cccccc; }
+    table.result caption { font-weight:bold; }
+
 </style>
 </head>
 <body>
@@ -31,73 +37,57 @@
     dbj.crazyLoader("dbj.each.js", "../dbj.es5.js");
 //////////////////////////////////////////////////////////////////////////////////
     window.onload = function() {
-    document.title = "DBJ*Each-Again&trade; " + (document.lastModified || "");
-        if ( window.google )
-        if (google.loader.ClientLocation != null) {
-            console.log("Your Location Is: " + google.loader.ClientLocation.address.city + ", " + google.loader.ClientLocation.address.region);
-        } else {
-            console.log("Your Location Was Not Detected By Google Loader");
-        }
+    window.tabla = dbj.table(document.getElementById('konsole'), null, "result")
+        .caption (
+        document.title = "DBJ*Each-Again&trade; " + (document.lastModified || "")
+        ).hdr(['Name','Total','Average']);
     }
 </script>
 <script type="text/javascript" id="a_little_local_library">
     var     make_object = function(size) { var o = { "size": size }; while (size--) { o[size] = size; }; return o; },
-    make_array = function(size) { var a = []; while (size--) { a[size] = size; }; return a; },
-    konsole = (function(konsole_id) {
-        var el_ = document.getElementById(konsole_id);
-        return {
-            log: function() {
-                var s = [].join.call(arguments, "");
-                dbj.later(function() {
-                    el_.innerHTML += "<br/>" + s;
-                    if (window.console) console.log(s);
-                    // el_.lastChild.scrollIntoView();
-                }, 10);
-            },
-            err: function() {
-                var msg = Array.prototype.join.call(arguments, "");
-                if (window.console) {
-                    window.console.error(msg);
-                } else {
-                    this.log("<span style='color:#cc0000;'>" + msg + "</span>");
-                }
-            }
-        };
-    } ("konsole")) ;
-
+    make_array = function(size) { var a = []; while (size--) { a[size] = size; }; return a; };
 </script>
 <script type="text/javascript">
     //----------------------------------------------------------------------------------------------
+    function TestingObject(vals, object_iteration) {
 
-    function Score(callback, timeToRun) {
-        //higher is better
-        var start = (new Date()).getTime(), time = 0, score = 0;
-        timeToRun = timeToRun || 1000;
-        while (((new Date()).getTime() - start) < timeToRun) {
-            callback();
-            score++;
+        dbj.summa.rst();
+
+        function Score(callback, timeToRun) {
+            //higher is better
+            var start = (new Date()).getTime(), time = 0, score = 0;
+            timeToRun = timeToRun || 1000;
+            while (((new Date()).getTime() - start) < timeToRun) {
+                callback();
+                score++;
+            }
+            return score;
         }
-        return score;
+        function test(callback, use_objects, obj_siz, loop_siz, args) {
+            var o = use_objects ? make_object(obj_siz) : make_array(obj_siz),
+           cb = function() { /* null-fun */ };
+            try {
+                return Score(function() { callback(o, cb, [args]); }, loop_siz);
+            } catch (x) {
+                tabla.err("test():" + x);
+                return -1; //  fun() has failed 
+            }
+        }
+        return function test_this(label, test_fun) {
+            dbj.later(function() {
+                var j = vals.NUMBER_OF_RUNS - 0;
+                while (j--) {
+                    dbj.summa.add(label,
+                     test(test_fun, object_iteration, vals.OBJECT_SIZE - 0, vals.LOOP_LENGTH - 0, vals.ARGUMENTS)
+                );
+                }
+                tabla.row([label, dbj.summa.sum(label), dbj.round(dbj.summa.avg(label), 2)]);
+            });
+            return test_this;
+        }
     }
-
+    //
     function main(object_iteration) {
-
-
-    function test(callback, use_objects, obj_siz, loop_siz, args ) {
-        var o = use_objects ? make_object(obj_siz) : make_array(obj_siz),
-           cb = function() { /* null-fun */};
-        try {
-        /*
-            var t1 = new Date(), counter = loop_siz;
-            while (counter--) { callback(o, cb, [args]); }
-            return (new Date() - t1) - 0;
-         */
-            return Score(function() { callback(o, cb, [args]); }, loop_siz );
-        } catch (x) {
-        konsole.err("test():" + x );
-            return -1; //  fun() has failed 
-        }
-    }
     //
     var ARGUMENTS = "ARGUMENTS",
         LOOP_LENGTH = "LOOP_LENGTH",
@@ -110,30 +100,18 @@
             LOOP_LENGTH: 1e1, 
             NUMBER_OF_RUNS: 1e1 });
 
-    konsole.log("---------------------------------------------------------------------");
-    konsole.log("Starting ", vals[NUMBER_OF_RUNS], " runs. With input type:", object_iteration ? " as object" : " as array",
+    tabla.err("Starting ", vals[NUMBER_OF_RUNS], " runs. With input type:", object_iteration ? " as object" : " as array",
     ", object size:", vals[OBJECT_SIZE], " , loop length: ", vals[LOOP_LENGTH]);
-     
-    function test_this ( label, test_fun )  {
-        dbj.later(function() {
-            var j = vals[NUMBER_OF_RUNS];
-            while (j--) {
-                dbj.summa.add(label,
-            test(test_fun, object_iteration, vals[OBJECT_SIZE] - 0, vals[LOOP_LENGTH] - 0, vals[ARGUMENTS])
-            );
-            }
-            konsole.log(label, ",\t\ttotal:", dbj.summa.sum(label), " ms,\t\taverage:", dbj.round( dbj.summa.avg(label), 2) );
-        });
-        return test_this;
-    }
 
-    test_this
-    ("jQuery", jQuery.each)
+     TestingObject( vals, object_iteration )
+    ("jQuery",jQuery.each)
     ("dbj.forEach", dbj.forEach)
     ("dbj_es5", each_es5)
-    ("dbj_FT_each", optimized_each);
-//    ("dbj_optimized_but_old_way", each7)
-}
+    ("dbj_FT_each", optimized_each)
+    ("each140", each140)
+    ("each126", each126)
+    ("optimized_each", optimized_each);
     //----------------------------------------------------------------------------------------------
+}
 </script>
 </html>
