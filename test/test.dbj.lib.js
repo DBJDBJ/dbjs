@@ -57,28 +57,34 @@ top.tests = {
                 [function () { return "{0}{1}{2}".format(0); }, "0{1}{2}"],
                 [function () { return "{99}".format("!"); }, "{99}"]
               ],
-		"DBJ dbj.type system": [
-                [function () { return dbj.type(NaN); }, "nan"],
-                [function () { return dbj.type([]); }, "array"],
-                [function () { return dbj.type(true); }, "boolean"],
-                [function () { return dbj.type(new Date()); }, "date"],
-                [function () { return dbj.type(new Error(0xFF, ".")); }, "error"],
-                [function () { return dbj.type(function () { }); }, "function"],
-                [function () { return dbj.type(Math); }, "math"],
-                [function () { return dbj.type(1); }, "number"],
-                [function () { return dbj.type({}); }, "object"],
-                [function () { return dbj.type(/./); }, "regexp"],
-                [function () { return dbj.type(""); }, "string"],
-                [function () { return dbj.type(window.JSON || undefined); }, (window.JSON ? "json" : "undefined")],
-                [function () { return dbj.type(window.Arguments || undefined); }, (window.Arguments ? "arguments" : "undefined")],
-                [function () { return dbj.type(undefined); }, "undefined"],
-                [function () { return dbj.type(null); }, "null"]
+		"DBJ dbj.role system": [
+                [function () { return dbj.roleof(NaN); }, "Number"],
+                [function () { return dbj.roleof([]); }, "Array"],
+                [function () { return dbj.roleof(true); }, "Boolean"],
+                [function () { return dbj.roleof(new Date()); }, "Date"],
+                [function () { return dbj.roleof(new Error(0xFF, ".")); }, "Error"],
+                [function () { return dbj.roleof(function () { }); }, "Function"],
+                [function () { return dbj.roleof(Math); }, "Math"],
+                [function () { return dbj.roleof(1); }, "Number"],
+                [function () { return dbj.roleof({}); }, "Object"],
+                [function () { return dbj.roleof(/./); }, "RegExp"],
+                [function () { return dbj.roleof(""); }, "String"],
+                [function () { return dbj.roleof(window.JSON || undefined); }, (window.JSON ? "JSON" : "undefined")],
+                [function () { return dbj.roleof(window.Arguments || undefined); }, (window.Arguments ? "Arguments" : "undefined")],
+                [function () { return dbj.roleof(undefined); }, "undefined"],
+                [function () { return dbj.roleof(null); }, "null"]
             ],
-		"DBJ dbj.type system isXXX functions ": [
-                [function () { return dbj.isArray([]); }, true],
-                [function () { return dbj.isFunction(Function); }, true],
-                [function () { return dbj.isObject({}); }, true],
-                [function () { return dbj.isString("."); }, true]
+		"DBJ dbj.role system isXXX functions ": [
+                [function () { return dbj.role.isArray([]); }, true],
+                [function () { return dbj.role.isBoolean(true); }, true],
+                [function () { return dbj.role.isDate(new Date()); }, true],
+                [function () { return dbj.role.isError(new Error()); }, true],
+                [function () { return dbj.role.isFunction(Function); }, true],
+                [function () { return dbj.role.isMath(Math); }, true],
+                [function () { return dbj.role.isNumber(13); }, true],
+                [function () { return dbj.role.isObject({}); }, true],
+                [function () { return dbj.role.isRegExp(/./); }, true],
+                [function () { return dbj.role.isString("."); }, true]
             ]
 	}
 }         // eof tests
