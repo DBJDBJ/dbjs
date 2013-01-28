@@ -6,15 +6,17 @@
 */
 
 (function (global, dbj, undefined) {
-
+/*
+for now it is feasible to slighlty expand a code in here instead of to requires
+this two more modules
     if (undefined === dbj) return window.alert("ERROR: dbj.cond requires dbj.lib");
     if (undefined === dbj.str) return window.alert("ERROR: dbj.cond requires dbj.str");
-
+*/
 	var oprot = Object.prototype,
 		aprot = Array.prototype,
 		sprot = String.prototype;
 
-	/*--------------------------------------------------------------------------------------------
+	/*----------------------------------------------------------------------------------------*/
 	if ("function" != typeof "".format)
 		String.prototype.format = function () {
 			var args = arguments;
@@ -23,8 +25,7 @@
 			}
             );
 		}
-    */
-	/*--------------------------------------------------------------------------------------------*/
+	/*-----------------------------------------------------------------------------------------*/
 		var eng/*ine*/ = {
 			toString: function () { return "DBJ.ORG JavaScript MicroLib 1.0.0"; },
 			isEven: function (value) { return (value % 2 == 0); },
@@ -64,6 +65,7 @@
 	}
 	*/
 	dbj.cond = (function () {
+		"use strict";
 		/*
 		comparator in essence defines the behaviour of the cond() 
 		default_comparator works for all types, because it uses function dbj.EQ.rathe(b, a) 
@@ -76,7 +78,7 @@
 		default_comparator( [3,2,1], [3,2,1] ) --> true
 		*/
 		var default_comparator = function (a, b) {
-		    if (eng.EQ.rathe(a, b)) return true;
+		    if (eng.EQ(a, b)) return true;
 			if (eng.isArray(b)) return indexOfanything(b, a) > -1;
 			return false;
 		};
@@ -138,7 +140,6 @@
 	also not implemented as array extension but private function instead
 	*/
 	var find_index = function (arg) {
-		"use strict";
 		var array = arg["array"], searchElement = arg["searchElement"],
 			fromIndex = arg["fromIndex"], comparator = arg["comparator"];
 
@@ -176,7 +177,7 @@
 	var indexOfanything = function (array, searchElement /*, fromIndex */) {
 		return find_index({ "array": array, "searchElement": searchElement,
 			"fromIndex": typeof (fromIndex) !== "undefined" ? fromIndex : null,
-			"comparator": eng.EQ.rathe
+			"comparator": eng.EQ
 		});
 	}
 	/*--------------------------------------------------------------------------------------------*/
@@ -194,189 +195,201 @@ full tests are slower
 simple tests are fasters
 --------------------------------------------------------------------------------------------
 */
-	var EQ = eng.EQ = {};
+	var EQ = eng.EQ = QUnit.equiv;
 
 // Test for equality any JavaScript type. Used in QUnit
 // equiv({a:1},{b:2}) --> true
 //
 // Discussions and reference: http://philrathe.com/articles/equiv
 // Test suites: http://philrathe.com/tests/equiv
+// https://raw.github.com/jquery/qunit/master/qunit/qunit.js
 // Author: Philippe Rathé <prathe@gmail.com>
-EQ.rathe = (function () {
-
-	var callers = [], // stack to decide between skip/abort functions
-		parents = []; // stack to avoiding loops from circular referencing
+QUnit = 
+  { 
+   equiv : (function() {
 
 	// Call the o related callback with the given arguments.
-	function bindCallbacks(o, callbacks, args) {
-		var prop = eng.type(o);
-		if (prop) {
-		    if (eng.isFunction(callbacks[prop])) {
-				return callbacks[prop].apply(callbacks, args);
+	function bindCallbacks( o, callbacks, args ) {
+		var prop = eng.type( o );
+		if ( prop ) {
+			if ( eng.isFunction( callbacks[ prop ] ) ) {
+				return callbacks[ prop ].apply( callbacks, args );
 			} else {
-				return callbacks[prop]; // or undefined
+				return callbacks[ prop ]; // or undefined
 			}
 		}
 	}
 
-	var callbacks = function () {
+	// the real equiv function
+	var innerEquiv,
+		// stack to decide between skip/abort functions
+		callers = [],
+		// stack to avoiding loops from circular referencing
+		parents = [],
 
-	    // expose it to be used by dbj.cond's default comparator
-		// for string, boolean, number and null
-		EQ.useStrictEquality = function (b, a) {
-			if (b instanceof a.constructor || a instanceof b.constructor) {
-				// to catch short annotaion VS 'new' annotation of a
-				// declaration
-				// e.g. var i = 1;
-				// var j = new Number(1);
-				return a == b;
-			} else {
-				return a === b;
+		getProto = Object.getPrototypeOf || function ( obj ) {
+			return obj.__proto__;
+		},
+		callbacks = (function () {
+
+			// for string, boolean, number and null
+			function useStrictEquality( b, a ) {
+				/*jshint eqeqeq:false */
+				if ( b instanceof a.constructor || a instanceof b.constructor ) {
+					// to catch short annotaion VS 'new' annotation of a
+					// declaration
+					// e.g. var i = 1;
+					// var j = new Number(1);
+					return a == b;
+				} else {
+					return a === b;
+				}
 			}
-		}
 
-		// TODO! Check that eng.type() returns these strings
-		return {
-			"string" : EQ.useStrictEquality,
-			"boolean" : EQ.useStrictEquality,
-			"number" : EQ.useStrictEquality,
-			"null" : EQ.useStrictEquality,
-			"undefined" : EQ.useStrictEquality,
+			return {
+				"string": useStrictEquality,
+				"boolean": useStrictEquality,
+				"number": useStrictEquality,
+				"null": useStrictEquality,
+				"undefined": useStrictEquality,
 
-			"nan" : function(b) {
-				return isNaN(b);
-			},
+				"nan": function( b ) {
+					return isNaN( b );
+				},
 
-			"date" : function(b, a) {
-				return eng.type(b) === "date"
-						&& a.valueOf() === b.valueOf();
-			},
+				"date": function( b, a ) {
+					return QUnit.objectType( b ) === "date" && a.valueOf() === b.valueOf();
+				},
 
-			"regexp" : function(b, a) {
-				return eng.type(b) === "regexp"
-						&& a.source === b.source && // the regex itself
-						a.global === b.global && // and its modifers
-													// (gmi) ...
-						a.ignoreCase === b.ignoreCase
-						&& a.multiline === b.multiline;
-			},
+				"regexp": function( b, a ) {
+					return QUnit.objectType( b ) === "regexp" &&
+						// the regex itself
+						a.source === b.source &&
+						// and its modifers
+						a.global === b.global &&
+						// (gmi) ...
+						a.ignoreCase === b.ignoreCase &&
+						a.multiline === b.multiline &&
+						a.sticky === b.sticky;
+				},
 
-			// - skip when the property is a method of an instance (OOP)
-			// - abort otherwise,
-			// initial === would have catch identical references anyway
-			"function" : function() {
-				var caller = callers[callers.length - 1];
-				return caller !== Object && typeof caller !== "undefined";
-			},
+				// - skip when the property is a method of an instance (OOP)
+				// - abort otherwise,
+				// initial === would have catch identical references anyway
+				"function": function() {
+					var caller = callers[callers.length - 1];
+					return caller !== Object && typeof caller !== "undefined";
+				},
 
-			"array" : function(b, a) {
-				var i, j, loop;
-				var len;
+				"array": function( b, a ) {
+					var i, j, len, loop;
 
-				// b could be an object literal here
-				if (!(eng.type(b) === "array")) {
-					return false;
-				}
-
-				len = a.length;
-				if (len !== b.length) { // safe and faster
-					return false;
-				}
-
-				// track reference to avoid circular references
-				parents.push(a);
-				for (i = 0; i < len; i++) {
-					loop = false;
-					for (j = 0; j < parents.length; j++) {
-						if (parents[j] === a[i]) {
-							loop = true;// dont rewalk array
-						}
-					}
-					if (!loop && !innerEquiv(a[i], b[i])) {
-						parents.pop();
+					// b could be an object literal here
+					if ( QUnit.objectType( b ) !== "array" ) {
 						return false;
 					}
-				}
-				parents.pop();
-				return true;
-			},
 
-			"object" : function(b, a) {
-				var i, j, loop;
-				var eq = true; // unless we can proove it
-				var aProperties = [], bProperties = []; // collection of
-														// strings
-
-				// comparing constructors is more strict than using
-				// instanceof
-				if (a.constructor !== b.constructor) {
-					return false;
-				}
-
-				// stack constructor before traversing properties
-				callers.push(a.constructor);
-				// track reference to avoid circular references
-				parents.push(a);
-
-				for (i in a) { // be strict: don't ensures hasOwnProperty
-								// and go deep
-					loop = false;
-					for (j = 0; j < parents.length; j++) {
-						if (parents[j] === a[i])
-							loop = true; // don't go down the same path
-											// twice
+					len = a.length;
+					if ( len !== b.length ) {
+						// safe and faster
+						return false;
 					}
-					aProperties.push(i); // collect a's properties
 
-					if (!loop && !innerEquiv(a[i], b[i])) {
-						eq = false;
-						break;
+					// track reference to avoid circular references
+					parents.push( a );
+					for ( i = 0; i < len; i++ ) {
+						loop = false;
+						for ( j = 0; j < parents.length; j++ ) {
+							if ( parents[j] === a[i] ) {
+								loop = true;// dont rewalk array
+							}
+						}
+						if ( !loop && !innerEquiv(a[i], b[i]) ) {
+							parents.pop();
+							return false;
+						}
 					}
+					parents.pop();
+					return true;
+				},
+
+				"object": function( b, a ) {
+					var i, j, loop,
+						// Default to true
+						eq = true,
+						aProperties = [],
+						bProperties = [];
+
+					// comparing constructors is more strict than using
+					// instanceof
+					if ( a.constructor !== b.constructor ) {
+						// Allow objects with no prototype to be equivalent to
+						// objects with Object as their constructor.
+						if ( !(( getProto(a) === null && getProto(b) === Object.prototype ) ||
+							( getProto(b) === null && getProto(a) === Object.prototype ) ) ) {
+								return false;
+						}
+					}
+
+					// stack constructor before traversing properties
+					callers.push( a.constructor );
+					// track reference to avoid circular references
+					parents.push( a );
+
+					for ( i in a ) { // be strict: don't ensures hasOwnProperty
+									// and go deep
+						loop = false;
+						for ( j = 0; j < parents.length; j++ ) {
+							if ( parents[j] === a[i] ) {
+								// don't go down the same path twice
+								loop = true;
+							}
+						}
+						aProperties.push(i); // collect a's properties
+
+						if (!loop && !innerEquiv( a[i], b[i] ) ) {
+							eq = false;
+							break;
+						}
+					}
+
+					callers.pop(); // unstack, we are done
+					parents.pop();
+
+					for ( i in b ) {
+						bProperties.push( i ); // collect b's properties
+					}
+
+					// Ensures identical properties name
+					return eq && innerEquiv( aProperties.sort(), bProperties.sort() );
 				}
+			};
+		}());
 
-				callers.pop(); // unstack, we are done
-				parents.pop();
-
-				for (i in b) {
-					bProperties.push(i); // collect b's properties
-				}
-
-				// Ensures identical properties name
-				return eq
-						&& innerEquiv(aProperties.sort(), bProperties
-								.sort());
-			}
-		};
-	}();
-
-    // the real equiv function
-	var innerEquiv = function() { // can take multiple arguments
-		var args = aprot.slice.apply(arguments);
-		if (args.length < 2) {
+	innerEquiv = function() { // can take multiple arguments
+		var args = [].slice.apply( arguments );
+		if ( args.length < 2 ) {
 			return true; // end transition
 		}
 
-		return (function(a, b) {
-			if (a === b) {
+		return (function( a, b ) {
+			if ( a === b ) {
 				return true; // catch the most you can
-			} else if (a === null || b === null || typeof a === "undefined"
-					|| typeof b === "undefined"
-					|| eng.type(a) !== eng.type(b)) {
+			} else if ( a === null || b === null || typeof a === "undefined" ||
+					typeof b === "undefined" ||
+					QUnit.objectType(a) !== QUnit.objectType(b) ) {
 				return false; // don't lose time with error prone cases
 			} else {
 				return bindCallbacks(a, callbacks, [ b, a ]);
 			}
 
 			// apply transition with (1..n) arguments
-		})(args[0], args[1])
-				&& arguments.callee.apply(this, args.splice(1,
-						args.length - 1));
+		}( args[0], args[1] ) && arguments.callee.apply( this, args.splice(1, args.length - 1 )) );
 	};
 
 	return innerEquiv;
-
-}()); // eof EQ.rathe
-
+}())
+} ; /* Qunit */
 /*--------------------------------------------------------------------------------------------*/
-} (this,dbj));
+} (this, this.dbj || (this.dbj = {}) ));
 /*--------------------------------------------------------------------------------------------*/
