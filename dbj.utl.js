@@ -160,6 +160,9 @@ function isBigEnough(element, index, array) {
 
     dbj.utl = {
 
+        isMSFT: (/*@cc_on!@*/false),
+        isBrowser: "undefined" === typeof WScript,
+        
     forEach : function(object, callback, args, own) {
         var Type = TOS_.call(object);
 
@@ -338,6 +341,58 @@ function isBigEnough(element, index, array) {
         			},
         			uid: function () { return id; }
         		}
+        	},
+        /*-----------------------------------------------------------------------------------------------------
+        this is WIN32 only stuff
+        -----------------------------------------------------------------------------------------------------*/
+        	GUID : function( null_) {
+        	    var empty = "00000000-0000-0000-0000-000000000000",
+                    four = function() { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); },
+                // 'fake' GUID for browser hosts
+                    make = function() {
+                        return (four() +
+                         four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
+                    };
+
+        	    if (! dbj.utl.isBrowser ) {
+        	        var x_ = null || new ActiveXObject("Scriptlet.TypeLib");
+        	        dbj.utl.GUID = function (null_) {
+        	            try {
+        	                return null_ ? empty : (x_.GUID);
+        	            }
+        	            catch (e) {
+        	                throw "ERROR in dbj.utl.GUID() : " + e;
+        	            }
+        	        }
+        	    }
+        	    else {
+        	        dbj.utl.GUID = function(null_) { return null_ ? empty : make(); }
+        	    }
+        	    return dbj.utl.GUID(null_);
+        	},
+        	date: {
+        	    diff: function (date1, date2) {
+        	        ///<summary>
+        	        ///timespan of the difference of first date and second date
+        	        ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
+        	        ///</summary>
+        	        ///<returns type="object" />
+        	        var diff = new Date();
+        	        diff.setTime(Math.abs(date1.getTime() - date2.getTime()));
+        	        var timediff = diff.getTime();
+        	        var weeks = Math.floor(timediff / (1000 * 60 * 60 * 24 * 7));
+        	        timediff -= weeks * (1000 * 60 * 60 * 24 * 7);
+        	        var days = Math.floor(timediff / (1000 * 60 * 60 * 24));
+        	        timediff -= days * (1000 * 60 * 60 * 24);
+        	        var hours = Math.floor(timediff / (1000 * 60 * 60));
+        	        timediff -= hours * (1000 * 60 * 60);
+        	        var mins = Math.floor(timediff / (1000 * 60));
+        	        timediff -= mins * (1000 * 60);
+        	        var secs = Math.floor(timediff / 1000);
+        	        timediff -= secs * 1000;
+        	        var years = parseInt(weeks / 52);
+        	        return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
+        	    }
         	}
 	} /* eof dbj.utl */
 })(window, dbj);

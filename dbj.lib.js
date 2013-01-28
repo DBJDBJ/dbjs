@@ -9,7 +9,9 @@
 /// $Revision: 25 $$Date: 11/03/10 15:29 $
 ///
 /// Dependencies : none
-(function(global, undefined) {
+(function (global, undefined) {
+
+    if ( "undefined" !== typeof dbj ) throw "dbj object can not be defined before dbj.lib is created ?" ;
     //
     var  
     TOS = Object.prototype.toString,
@@ -27,7 +29,7 @@
             }, time_out || 0);
         },
         "isMSFT": (/*@cc_on!@*/false),
-        "in_a_browser": "undefined" === typeof WScript,
+        "isBrowser": "undefined" === typeof WScript,
         "string_indexing": "ABC"[0] === "A",
         "alert_": (function(browser_host) {
             return browser_host ? function(m_) { var tid = STT(function() { CTT(tid); global.alert("" + m_); }, 1); }
@@ -47,10 +49,9 @@
             not_implemented: function() { this.terror(" not implemented yet"); }
         }
     }; // local
-    /// The DBJ library namespace.
-    window.dbj || (window.dbj = {});
-    if ("function" !== typeof dbj.extend)
-        dbj.extend = function() {
+    /// The DBJ library object
+    dbj = {
+        extend : function() {
             var options, src, copy;
             for (var i = 0, length = arguments.length; i < length; i++) {
                 if (!(options = arguments[i])) continue;
@@ -63,10 +64,7 @@
                 }
             }
             return dbj;
-        };
-
-
-        dbj.extend({
+        },
       "later": function(func, timeout) {
                 /* execute a function bit latter, default timeout is 1 sec */
                 var tid = setTimeout(function() {
@@ -75,13 +73,13 @@
                 }, timeout || 1000);
             },
         "konsole": local.konsole,
-        "toString": function() { return "DBJ*JSFM(tm) " + this.version + " $Date: 11/03/10 15:29 $"; },
-        "version": "1." + "$Revision: 25 $".match(/\d+/),
+        "toString": function() { return "dbjS (tm) " + this.version + " (c) 2001 - 2013 by DBJ.ORG"; },
+        "version": "2013.1",
         "empty": function() { },
         // feature checks , specific for DBJS 
         "ftr": {
             "isMSFT": local.isMSFT,
-            "in_a_browser": local.in_a_browser,
+            "isBrowser": local.isBrowser,
             "string_indexing": local.string_indexing
         }, // ftr
         "browser": { "support": { "orphan_css": true} },
@@ -202,10 +200,9 @@
             }
         })()
 
-    }); // eof dbj.extend() call
-
+    }; // eof dbj {}
     //-----------------------------------------------------------------------------------------------------
-    if (dbj.ftr.in_a_browser) // in a browser
+    if (dbj.ftr.isBrowser) // in a browser
     {
         // CSS properties on new elements still not attached to the document
         // check if CSS properties get/set is supported on newly created but still detached elements
@@ -223,8 +220,9 @@
 
         if ("object" === typeof window.JSON)
             try {
-            JSON.parse("{ a : 1 }");
+            JSON.parse('{ a : 1 }');
             dbj.json.nonstandard = true;
+                /* { "a:" :1 } is standard */
         } catch (x) {
             dbj.json.nonstandard = false;
         }
@@ -246,66 +244,10 @@
         if (!dbj.json.ok_string(data)) dbj.konsole.terror("Bad JSON string.");
         return (new Function("return " + data))();
     }
-    } // if in_a_browser
+    } // if isBrowser
     //-----------------------------------------------------------------------------------------------------
-    dbj["date"] = { "diff": function(date1, date2) {
-        ///<summary>
-        ///timespan of the difference of first date and second date
-        ///returns: '{ "date1": date1, "date2": date2, "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years }'
-        ///</summary>
-        ///<returns type="object" />
-        var diff = new Date();
-        diff.setTime(Math.abs(date1.getTime() - date2.getTime()));
-        var timediff = diff.getTime();
-        var weeks = Math.floor(timediff / (1000 * 60 * 60 * 24 * 7));
-        timediff -= weeks * (1000 * 60 * 60 * 24 * 7);
-        var days = Math.floor(timediff / (1000 * 60 * 60 * 24));
-        timediff -= days * (1000 * 60 * 60 * 24);
-        var hours = Math.floor(timediff / (1000 * 60 * 60));
-        timediff -= hours * (1000 * 60 * 60);
-        var mins = Math.floor(timediff / (1000 * 60));
-        timediff -= mins * (1000 * 60);
-        var secs = Math.floor(timediff / 1000);
-        timediff -= secs * 1000;
-        var years = parseInt(weeks / 52);
-        return { "date1": date1.getTime(), "date2": date2.getTime(), "weeks": weeks, "days": days, "hours": hours, "mins": "mins", "secs": secs, "approx_years": years };
-    }
-    }
-
-
 })(this);
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-(function(tos) {
-var fs_ = tos.call(function() { }),  /* function signature */
-    os_ = tos.call({});              /* object signature */
-    dbj.isFunction = ("function" === (typeof window.open)) ? function(f) {
-        ///<summary>
-        /// isFunction V.5
-        /// does not handle properly only one case and only in IE
-        /// var singularity = { toString: undefined, valueOf : function(){return "function";}}
-        ///</summary>
-        return fs_ === tos.call(f);
-    } :
-    function(f) {
-        // IE version is less trivial since in IE dom and browser methods are of a type "object"
-        // "object" === typeof window.alert
-        try {
-            return /\bfunction\b/.test(f);
-        } catch (x) {
-            return false;
-        }
-    };
 
-    dbj.isObject = ("function" === (typeof window.open)) ? function(x) {
-        return (os_ === tos.call(x));
-    } : function(x) {
-        // In IE we have to take care of the dom and browser objects being of a
-        // "object" type. So we have to check first (in IE only) dbj.isFunction(x)
-        if (dbj.isFunction(x)) return false;
-        return (os_ === tos.call(x));
-    };
-
-})(Object.prototype.toString);
 //--------------------------------------------------------------------------------------------
 // synchronous and asynchronous function callers
 (function() {
@@ -339,6 +281,64 @@ var fs_ = tos.call(function() { }),  /* function signature */
 })();
 
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//
+(function () {
+    ///<summary>
+    ///usefull regular expressions
+    ///</summary>
+    /*
+    The following table lists frequently used special characters and their Unicode value.
+    
+    Category	        Unicode value	        Name	Format name
+    White space values	
+                        \u0009	Tab	            <TAB>
+                        \u000B	Vertical Tab	<VT>
+                        \u000C	Form Feed	    <FF>
+                        \u0020	Space	        <SP>
+    Line terminator values	
+                        \u000A	Line Feed	    <LF>
+                        \u000D	Carriage Return	<CR>
+    Additional Unicode escape sequence values	
+                        \u0008	Backspace	    <BS>
+                        \u0009	Horizontal Tab	<HT>
+                        \u0022	Double Quote	 "
+                        \u0027	Single Quote	'
+                        \u005C	Backslash	\
+    */
+    dbj.rx = {
+        catch_all: [
+        ///<summary>
+        ///catch-all regular expressions
+        ///</summary>
+               (new RegExp).compile(".|\\n+", "mg"),
+        ///<summary>
+        ///this one is apparently correct and slow
+        ///</summary>
+               (new RegExp).compile("[\\w\\W].*?", "mg")
+        ///<summary>
+        ///this one is apparently unbelievably fast, and correct
+        ///</summary>
+        ],
+        c_style_comments: (new RegExp).compile("(\\/\\*)(.*?)(\\*\\/)", "mg"),
+        ///<summary>
+        /// match /* */ comments
+        ///</summary>
+        slashslash_comments: (new RegExp).compile("(\\/\\/)(.*?)($)", "mg"),
+        ///<summary>
+        /// match // comments
+        ///</summary>
+        source_junk: (new RegExp).compile("\\t+|\\s*", "mg"),
+        ///<summary>
+        /// match \t, and \s , but NOT \n or \r !
+        ///</summary>
+        new_line: (new RegExp).compile("\\n+|\\r+", "mg")
+        ///<summary>
+        /// match ONLY \n or \r
+        ///</summary>
+    }
+
+})();
 //-----------------------------------------------------------------------------
 (function(tos, window, undefined ) {
     dbj.classof = function(o) {
@@ -382,64 +382,7 @@ var fs_ = tos.call(function() { }),  /* function signature */
     @*/
 })(Object.prototype.toString, window );
 
-//-----------------------------------------------------------------------------
-//
-(function() {
-///<summary>
-///usefull regular expressions
-///</summary>
-/*
-The following table lists frequently used special characters and their Unicode value.
 
-Category	        Unicode value	        Name	Format name
-White space values	
-                    \u0009	Tab	            <TAB>
- 	                \u000B	Vertical Tab	<VT>
- 	                \u000C	Form Feed	    <FF>
- 	                \u0020	Space	        <SP>
-Line terminator values	
-                    \u000A	Line Feed	    <LF>
- 	                \u000D	Carriage Return	<CR>
-Additional Unicode escape sequence values	
-                    \u0008	Backspace	    <BS>
- 	                \u0009	Horizontal Tab	<HT>
- 	                \u0022	Double Quote	 "
- 	                \u0027	Single Quote	'
- 	                \u005C	Backslash	\
-*/
-dbj.rx = {
-catch_all: [
-///<summary>
-///catch-all regular expressions
-///</summary>
-       (new RegExp).compile(".|\\n+", "mg"),
-///<summary>
-///this one is apparently correct and slow
-///</summary>
-       (new RegExp).compile("[\\w\\W].*?", "mg")
-///<summary>
-///this one is apparently unbelievably fast, and correct
-///</summary>
-       ],
-c_style_comments : (new RegExp).compile("(\\/\\*)(.*?)(\\*\\/)","mg"),
-///<summary>
-/// match /* */ comments
-///</summary>
-slashslash_comments : (new RegExp).compile("(\\/\\/)(.*?)($)","mg"),
-///<summary>
-/// match // comments
-///</summary>
-source_junk: (new RegExp).compile("\\t+|\\s*","mg"),
-///<summary>
-/// match \t, and \s , but NOT \n or \r !
-///</summary>
-new_line: (new RegExp).compile("\\n+|\\r+","mg")
-///<summary>
-/// match ONLY \n or \r
-///</summary>
-}
-
-})();
 
 
 //-------------------------------------------------------------------------------------------------------
@@ -505,34 +448,35 @@ for (var j in dbj.role.names) {
               "return dbj.role.names[dbj.role.name(o)] === dbj.role.names['" + j + "'];");
 };
 })();
-
-//-----------------------------------------------------------------------------------------------------
-(function() {
-    var empty = "00000000-0000-0000-0000-000000000000",
-        four = function() { return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1).toUpperCase(); },
-    // 'fake' GUID for browser hosts
-        make = function() {
-            return (four() +
-             four() + "-" + four() + "-" + four() + "-" + four() + "-" + four() + four() + four());
-        };
-
-    if (! dbj.ftr.in_a_browser) {
-        var x_ = null;
-        dbj.GUID = function(empty_) {
-        //   This will work outside of browsers only
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+(function (tos) {
+    var fs_ = tos.call(function () { }),  /* function signature */
+        os_ = tos.call({});              /* object signature */
+    dbj.isFunction = ("function" === (typeof window.open)) ? function (f) {
+        ///<summary>
+        /// isFunction V.5
+        /// does not handle properly only one case and only in IE
+        /// var singularity = { toString: undefined, valueOf : function(){return "function";}}
+        ///</summary>
+        return fs_ === tos.call(f);
+    } :
+    function (f) {
+        // IE version is less trivial since in IE dom and browser methods are of a type "object"
+        // "object" === typeof window.alert
         try {
-        x_ = x_ || new ActiveXObject("Scriptlet.TypeLib");
-        return empty_ ? empty : (x_.GUID);
+            return /\bfunction\b/.test(f);
+        } catch (x) {
+            return false;
         }
-        catch (e) {
-        dbj.konsole.warn("error creating dbj.GUID : " + e.message);
-        return empty_ ? empty : make();
-        }
-        }
-    }
-    else {
-        dbj.GUID = function(null_) { return null_ ? empty : make(); }
-    }
+    };
 
-})();
-///<reference path="dbj.lib.js" />
+    dbj.isObject = ("function" === (typeof window.open)) ? function (x) {
+        return (os_ === tos.call(x));
+    } : function (x) {
+        // In IE we have to take care of the dom and browser objects being of a
+        // "object" type. So we have to check first (in IE only) dbj.isFunction(x)
+        if (dbj.isFunction(x)) return false;
+        return (os_ === tos.call(x));
+    };
+
+})(Object.prototype.toString);
