@@ -46,4 +46,4 @@ DEPENDANCIES : jQuery 1.3.2 or higher + dbj.lib.js
     //    $.dbj.parseUri("http://user@password:host:13/query/string?param1=12#bookmark");
 
 })(jQuery);
-/// <reference path="dbj.uriparse.js" />
+/* TODO: do we need this actually? */
