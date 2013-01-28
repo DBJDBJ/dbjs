@@ -1,7 +1,6 @@
 ﻿///
-/// GPL (c) 2009 by DBJ.ORG
+/// MIT (c) 2009 - 2013 by DBJ.ORG
 /// DBJ.MATH.JS(tm)
-/// $Revision: 3 $$Date: 9/03/10 0:29 $
 ///
 /// Dependencies : jQuery 1.3.2 or higher
 /// Dependencies : DBJ.LIB.JS 1.0.0 or higher
@@ -14,65 +13,91 @@
 
 (function(window, dbj, undefined) {
 
-    dbj.MAX_INT = (0xFFFF);
-    /// <summary>
-    /// a.k.a. 65535 a.k.a. max int16 number
-    /// </summary>
-    dbj.fib = function(n)
-    ///<summary>
-    /// Fibbonachi number computation. 
-    /// Much faster and *much* less dangerous to use than: 
-    /// function fib(n){
-    ///    return n < 2 ? n : fib(n - 1) + fib(n - 2);
-    ///}
-    /// Inspired by: http://www.ddj.com/hpc-high-performance-computing/217801225?pgno=5
-    ///</summary>
-    {
-        var fib_1 = 1, fib_2 = 0, t;
-        for (var i = 0; i < n; i++) {
-            t = fib_1;
-            fib_1 += fib_2;
-            fib_2 = t;
-        }
-        return fib_2;
-    }
+   if (undefined === dbj) return window.alert("ERROR: dbj.utl requires dbj.lib to be included before it.");
 
-    dbj.sort = function(/*int[]*/a, /*int*/l, /*int*/r) {
-        /// <summary>
-        /// quicksort algorithm. Why? It is found to be faster to use this than to relay 
-        /// in IE on the inbuilt one.
-        /// example call :
-        /// dbj.sort( arr, 0, arr.length )
-        /// will sort the whole of the array 'arr'
-        /// due to the javascript typelese nature the meaning of "<=" operator 
-        /// used is automagicaly working on strings,objects,dates etc ...
-        /// </summary>
-        ///	<param name="a" type="array">
-        ///	array of object to be sorted
-        ///	</param>
-        ///	<param name="l" type="number">
-        ///		starting index from which to sort ( 0 .. end-index )
-        ///	</param>
-        ///	<param name="r" type="number">
-        ///		end index from which to sort ( start-index .. length )
-        ///	</param>
-        var i, j;
-        var x, y;
-        i = l; j = r;
-        x = a[parseInt((l + r) / 2)];
-        do {
-            while ((a[i] < x) && (i < r)) i++;
-            while ((x < a[j]) && (j > l)) j--;
-            if (i <= j) {
-                y = a[i];
-                a[i] = a[j];
-                a[j] = y;
-                i++; j--;
-            }
-        } while (i <= j);
-        if (l < j) dbj.sort(a, l, j);
-        if (i < r) dbj.sort(a, i, r);
-    };
+
+   dbj.math = {
+
+       MAX_INT: (0xFFFF), /* a.k.a. 65535 a.k.a. max int16 number */
+       fib: function (n)
+           ///<summary>
+           /// Fibbonachi number computation. 
+           /// Much faster and *much* less dangerous to use than: 
+           /// function fib(n){
+           ///    return n < 2 ? n : fib(n - 1) + fib(n - 2);
+           ///}
+           /// Inspired by: http://www.ddj.com/hpc-high-performance-computing/217801225?pgno=5
+           ///</summary>
+       {
+           var fib_1 = 1, fib_2 = 0, t;
+           for (var i = 0; i < n; i++) {
+               t = fib_1;
+               fib_1 += fib_2;
+               fib_2 = t;
+           }
+           return fib_2;
+       },
+       sort: function (/*int[]*/a, /*int*/l, /*int*/r) {
+           /// <summary>
+           /// quicksort algorithm. Why? It is found to be faster to use this than to relay 
+           /// in IE on the inbuilt one.
+           /// example call :
+           /// dbj.sort( arr, 0, arr.length )
+           /// will sort the whole of the array 'arr'
+           /// due to the javascript typelese nature the meaning of "<=" operator 
+           /// used is automagicaly working on strings,objects,dates etc ...
+           /// </summary>
+           ///	<param name="a" type="array">
+           ///	array of object to be sorted
+           ///	</param>
+           ///	<param name="l" type="number">
+           ///		starting index from which to sort ( 0 .. end-index )
+           ///	</param>
+           ///	<param name="r" type="number">
+           ///		end index from which to sort ( start-index .. length )
+           ///	</param>
+           var i, j;
+           var x, y;
+           i = l; j = r;
+           x = a[parseInt((l + r) / 2)];
+           do {
+               while ((a[i] < x) && (i < r)) i++;
+               while ((x < a[j]) && (j > l)) j--;
+               if (i <= j) {
+                   y = a[i];
+                   a[i] = a[j];
+                   a[j] = y;
+                   i++; j--;
+               }
+           } while (i <= j);
+           if (l < j) dbj.sort(a, l, j);
+           if (i < r) dbj.sort(a, i, r);
+       },
+       summa: (function () {
+           /* help summarizing or averaging values saved in this cache of named arrays of numerical values 
+           internal obj_ is object where each property is an array
+           */
+           var obj_ = {},
+       sum_ = function (arr) { var l = arr.length, sum = 0; while (l--) { sum += arr[l]; }; return sum; },
+       avg_ = function (arr) { return sum_(arr) / arr.length; };
+
+           return {
+               /* interface */
+               add: function (k, v) {
+                   v = v - 0;
+                   if (!isArray(obj_[k]))
+                       obj_[k] = [v];
+                   else
+                       obj_[k].push(v);
+                   return v;
+               },
+               sum: function (k) { return sum_(obj_[k] || []); },
+               avg: function (k) { return avg_(obj_[k] || []); },
+               all: function (k) { return obj_[k] || [] },
+               rst: function () { obj_ = {}; return this; }
+           };
+       } ())
+   };
 
     // A dbj set of Number extensions.
     // why extending Number ? No other reason than chaining.
