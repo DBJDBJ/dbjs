@@ -141,35 +141,10 @@
             :
                 function() { return new global.ActiveXObject("MSXML2.DOMDocument"); }
         },
-        "cond": function(v) {
-            ///<summary>
-            /// in javascript switch statement can not act as an rvalue
-            /// so one can use the following dbj.cond() :
-            /// dbj.cond() returns the value if x matches the case
-            /// arguments case and value must be in pairs
-            /// the last argument (if given) is the default value
-            ///<code>
-            /// dbj.cond( input, case1, value1, case2, value2, ..... , value_for_default )
-            ///</code>
-            /// example :
-            ///<code>
-            /// dbj.cond(2, 1, "blue", 2, "red", /*default is*/"green");
-            ///</code>
-            /// returns "red"
-            ///</summary>
-            var j = 1, L = arguments.length;
-            ///allow users to change the condition operator used to match the value given
-            ///default condition is 'equality', aka 'exact match'
-            ///this method must return true or false
-            for (; j < L; j += 2) {
-                if (this.cond_condition(v, arguments[j])) return arguments[j + 1];
-            }
-            return (!arguments[j - 2]) ? undefined : arguments[j - 2];
-        },
-        "cond_condition": function(a, b) { return a === b; },
         /*
         return undefined on any object that is not "object" or "function"
-        also ignore the possible prototype chain
+        return true if arg is empty object
+        ignore the possible prototype chain
         */
         "isEmpty": function(object) {
             if (typeof object !== 'object' && typeof object !== 'function') return;
