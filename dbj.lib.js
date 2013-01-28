@@ -428,7 +428,7 @@
         ///</summary>
     }
 };
-// 
+// EXPORT to the global space
 window.roleof = dbj.roleof = dbj.role.name ;
 //
 /// generate dbj.role.names object, with distinctive role names
