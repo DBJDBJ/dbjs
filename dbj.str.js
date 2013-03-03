@@ -3,14 +3,12 @@
  MIT (c) 2009-2013 by DBJ.ORG
  DBJ.STR.JS(tm)
 -----------------------------------------------------------------------------
- Dependencies : dbj.lib.js
+DBJ String additions
+no dependancies
+
  */
 
-(function (global, dbj, undefined) {
-
-    if (undefined === dbj) return window.alert("ERROR: dbj.str requires dbj.lib to be included before it.");
-
-    dbj.str = { toString: function () { return "DBJ String additions" } };
+(function (global, undefined) {
 
     global = global || {}; // 'this' is null in the global ES5 space
 
@@ -186,5 +184,5 @@
         };
     
 
-})(this, dbj);
+})(this);
 /* 'this' is null in the global ES5 space */
